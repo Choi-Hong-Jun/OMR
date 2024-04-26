@@ -4,12 +4,13 @@ import json
 import fitz
 import cv2
 import numpy as np
+import webbrowser
 from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QListWidget, QFileDialog,
                              QInputDialog, QTableWidget, QLabel, QLineEdit, QTableWidgetItem, QComboBox, QStackedWidget,
                             QCheckBox, QListWidgetItem)
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QIcon, QFont, QPixmap
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QPersistentModelIndex
 
 
 class MainWidget(QWidget):   # 메인 화면
@@ -40,6 +41,22 @@ class MainWidget(QWidget):   # 메인 화면
         vbox.addStretch()
 
         self.setLayout(vbox)
+
+        self.notice_label = QLabel("유의 사항\n\n\n\n\n   1. 복수 정답 불가능\n\n   2.omr 결과 틀릴 수 있으니까 꼭 대조", self)
+        self.notice_label.setFont(QFont('Arial', 40))
+        self.notice_label.setAlignment(Qt.AlignCenter)
+        self.notice_label.setWordWrap(True)
+        self.notice_label.setStyleSheet(
+            "QLabel {"
+            "border: 2px solid black;"
+            "border-radius: 10px;"
+            "padding: 10px;" 
+            "background-color: #ffffff;"
+            "}"
+        )
+        self.notice_label.setFixedSize(1200, 800)
+        self.notice_label.move(300, 200)
+        self.notice_label.show()
 
         btn1.clicked.connect(self.showExamInputWidget)   # 시험 입력 버튼과 함수 연결
         btn2.clicked.connect(self.showOMRGradingWidget)   # OMR 채점 버튼과 함수 연결
@@ -1302,19 +1319,25 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
         self.btn_search.clicked.connect(self.loadScore)
         self.btn_search.show()
 
+        self.btn_select = QPushButton("모두 선택", self)
         self.btn_loadst = QPushButton("학생정보 가져오기", self)
         self.btn_savest = QPushButton("학생정보 저장", self)
         self.btn_send = QPushButton("성적표 문자 전송", self)
         self.btn_print = QPushButton("인쇄", self)
+        self.btn_select.setFixedSize(120, 40)
         self.btn_loadst.setFixedSize(120, 40)
         self.btn_savest.setFixedSize(120, 40)
         self.btn_send.setFixedSize(120, 40)
         self.btn_print.setFixedSize(120, 40)
-        self.btn_loadst.move(180, 100)
-        self.btn_savest.move(380, 100)
-        self.btn_send.move(580, 100)
-        self.btn_print.move(780, 100)
+        self.btn_select.move(180, 100)
+        self.btn_loadst.move(380, 100)
+        self.btn_savest.move(580, 100)
+        self.btn_send.move(780, 100)
+        self.btn_print.move(980, 100)
+        self.btn_select.clicked.connect(self.selectCb)
+        self.btn_print.clicked.connect(self.printPage)
 
+        self.btn_select.show()
         self.btn_loadst.show()
         self.btn_savest.show()
         self.btn_send.show()
@@ -1389,6 +1412,51 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
             score_item = QTableWidgetItem(str(score_value))
             score_item.setTextAlignment(Qt.AlignCenter)
             self.table_widget.setItem(row, 6, score_item)
+
+    def selectCb(self):
+        row_count = self.table_widget.rowCount()
+
+        for row in range(row_count):
+            checkbox_widget = self.table_widget.cellWidget(row, 0)
+            if checkbox_widget:
+                checkbox = checkbox_widget.layout().itemAt(0).widget()
+                if isinstance(checkbox, QCheckBox):
+                    checkbox.setChecked(True)
+
+    def printPage(self):
+        checked_indexes = self.getCheckedIndexes()
+        if checked_indexes:
+            for i, index in enumerate(checked_indexes):
+                file_path = f"print_page_{i}.html"
+                combo_box_text = self.cb.currentText()
+                table_item_text = self.table_widget.item(index.row(), 1).text()
+                with open(file_path, "w", encoding="utf-8") as file:
+                    title = f"{combo_box_text} - {table_item_text}"
+                    file.write(
+                        f"<html><head><meta charset='utf-8'><title>{title}</title></head><body style='background-color:white;'></body></html>")
+                webbrowser.open("file://" + os.path.realpath(file_path))
+
+    def getCheckedIndexes(self):
+        checked_indexes = []
+        row_count = self.table_widget.rowCount()
+        for row in range(row_count):
+            checkbox_widget = self.table_widget.cellWidget(row, 0)
+            if checkbox_widget:
+                checkbox = checkbox_widget.layout().itemAt(0).widget()
+                if isinstance(checkbox, QCheckBox) and checkbox.isChecked():
+                    checked_indexes.append(QPersistentModelIndex(self.table_widget.model().index(row, 0)))
+        return checked_indexes
+
+    def countChecked(self):
+        checked_count = 0
+        row_count = self.table_widget.rowCount()
+        for row in range(row_count):
+            checkbox_widget = self.table_widget.cellWidget(row, 0)
+            if checkbox_widget:
+                checkbox = checkbox_widget.layout().itemAt(0).widget()
+                if isinstance(checkbox, QCheckBox) and checkbox.isChecked():
+                    checked_count += 1
+        return checked_count
 
     def showMainWidget(self):
         self.exam_input_widget = MainWidget()
