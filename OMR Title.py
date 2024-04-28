@@ -1320,24 +1320,29 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
         self.btn_search.show()
 
         self.btn_select = QPushButton("모두 선택", self)
+        self.btn_cancel = QPushButton("모두 취소", self)
         self.btn_loadst = QPushButton("학생정보 가져오기", self)
         self.btn_savest = QPushButton("학생정보 저장", self)
         self.btn_send = QPushButton("성적표 문자 전송", self)
         self.btn_print = QPushButton("인쇄", self)
-        self.btn_select.setFixedSize(120, 40)
+        self.btn_select.setFixedSize(100, 40)
+        self.btn_cancel.setFixedSize(100, 40)
         self.btn_loadst.setFixedSize(120, 40)
         self.btn_savest.setFixedSize(120, 40)
         self.btn_send.setFixedSize(120, 40)
         self.btn_print.setFixedSize(120, 40)
         self.btn_select.move(180, 100)
-        self.btn_loadst.move(380, 100)
-        self.btn_savest.move(580, 100)
-        self.btn_send.move(780, 100)
-        self.btn_print.move(980, 100)
+        self.btn_cancel.move(280, 100)
+        self.btn_loadst.move(580, 100)
+        self.btn_savest.move(880, 100)
+        self.btn_send.move(1180, 100)
+        self.btn_print.move(1480, 100)
         self.btn_select.clicked.connect(self.selectCb)
+        self.btn_cancel.clicked.connect(self.cancelCb)
         self.btn_print.clicked.connect(self.printPage)
 
         self.btn_select.show()
+        self.btn_cancel.show()
         self.btn_loadst.show()
         self.btn_savest.show()
         self.btn_send.show()
@@ -1413,7 +1418,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
             score_item.setTextAlignment(Qt.AlignCenter)
             self.table_widget.setItem(row, 6, score_item)
 
-    def selectCb(self):
+    def selectCb(self):   # 체크박스 모두 선택
         row_count = self.table_widget.rowCount()
 
         for row in range(row_count):
@@ -1423,7 +1428,17 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                 if isinstance(checkbox, QCheckBox):
                     checkbox.setChecked(True)
 
-    def printPage(self):
+    def cancelCb(self):   # 체크박스 모두 취소
+        row_count = self.table_widget.rowCount()
+
+        for row in range(row_count):
+            checkbox_widget = self.table_widget.cellWidget(row, 0)
+            if checkbox_widget:
+                checkbox = checkbox_widget.layout().itemAt(0).widget()
+                if isinstance(checkbox, QCheckBox):
+                    checkbox.setChecked(False)
+
+    def printPage(self):   # 페이지 생성
         checked_indexes = self.getCheckedIndexes()
         if checked_indexes:
             for i, index in enumerate(checked_indexes):
@@ -1436,7 +1451,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                         f"<html><head><meta charset='utf-8'><title>{title}</title></head><body style='background-color:white;'></body></html>")
                 webbrowser.open("file://" + os.path.realpath(file_path))
 
-    def getCheckedIndexes(self):
+    def getCheckedIndexes(self):   # 페이지의 정보 찾기
         checked_indexes = []
         row_count = self.table_widget.rowCount()
         for row in range(row_count):
@@ -1447,7 +1462,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                     checked_indexes.append(QPersistentModelIndex(self.table_widget.model().index(row, 0)))
         return checked_indexes
 
-    def countChecked(self):
+    def countChecked(self):   # 체크 박스의 체크 된 개수 측정
         checked_count = 0
         row_count = self.table_widget.rowCount()
         for row in range(row_count):
