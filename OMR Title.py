@@ -182,7 +182,7 @@ class ExamInputWidget(QWidget):   # 시험 입력 화면
 
         if hasattr(self, 'self.selected_text_label'):
             self.layout().removeWidget(self.selected_text_label)
-            self.self.selected_text_label.deleteLater()
+            self.selected_text_label.deleteLater()
 
         self.selected_text_label.setFont(font)
         self.selected_text_label.show()
