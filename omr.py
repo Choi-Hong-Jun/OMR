@@ -532,7 +532,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
             self.btn_nextpage.hide()
 
     def extract_name1_1(self, img_path):  # 이름 첫번째 글자의 초성
-        img = cv2.imread(img_path)
+        img = self.read_img_with_cv(img_path)
         if img is None:
             print("")
             return
@@ -577,7 +577,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
         return omr_names
 
     def extract_name1_2(self, img_path):   # 이름 첫번째 글자의 중성
-        img = cv2.imread(img_path)
+        img = self.read_img_with_cv(img_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         omr_names = []
         user_coordinates = [(199, 277, 17, 266)]
@@ -621,7 +621,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
         return omr_names
 
     def extract_name1_3(self, img_path):   # 이름 첫번째 글자의 종성
-        img = cv2.imread(img_path)
+        img = self.read_img_with_cv(img_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         omr_names = []
         user_coordinates = [(215, 277, 17, 200)]
@@ -698,7 +698,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
         return combined_names
 
     def extract_name2_1(self, img_path):   # 이름 두번째 글자의 초성
-        img = cv2.imread(img_path)
+        img = self.read_img_with_cv(img_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         omr_names = []
         user_coordinates = [(234, 277, 17, 200)]
@@ -737,7 +737,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
         return omr_names
 
     def extract_name2_2(self, img_path):   # 이름 두번째 글자의 중성
-        img = cv2.imread(img_path)
+        img = self.read_img_with_cv(img_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         omr_names = []
         user_coordinates = [(250, 277, 17, 266)]
@@ -781,7 +781,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
         return omr_names
 
     def extract_name2_3(self, img_path):   # 이름 두번째 글자의 종성
-        img = cv2.imread(img_path)
+        img = self.read_img_with_cv(img_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         omr_names = []
         user_coordinates = [(266, 277, 17, 200)]
@@ -858,7 +858,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
         return combined_names
 
     def extract_name3_1(self, img_path):   # 이름 세번째 글자의 초성
-        img = cv2.imread(img_path)
+        img = self.read_img_with_cv(img_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         omr_names = []
         user_coordinates = [(285, 277, 17, 200)]
@@ -897,7 +897,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
         return omr_names
 
     def extract_name3_2(self, img_path):   # 이름 세번째 글자의 중성
-        img = cv2.imread(img_path)
+        img = self.read_img_with_cv(img_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         omr_names = []
         user_coordinates = [(300, 277, 17, 266)]
@@ -941,7 +941,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
         return omr_names
 
     def extract_name3_3(self, img_path):   # 이름 세번째 글자의 종성
-        img = cv2.imread(img_path)
+        img = self.read_img_with_cv(img_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         omr_names = []
         user_coordinates = [(314, 277, 17, 200)]
@@ -1042,7 +1042,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
             current_row += 1
 
     def extract_number(self, img_path):   # omr 학번 표에 삽입
-        img = cv2.imread(img_path)
+        img = self.read_img_with_cv(img_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         omr_numbers = []
         user_coordinates = [(99, 270, 11, 245), (113, 270, 11, 245), (127, 270, 11, 245), (142, 270, 11, 245)]
@@ -1076,7 +1076,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
             current_row += 1
 
     def extract_omr(self, img_path):   # omr 답 표에 삽입
-        img = cv2.imread(img_path)
+        img = self.read_img_with_cv(img_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         omr_answers = []
         user_coordinates = [(422, 75, 78, 22), (422, 100, 78, 22), (422, 125, 78, 22), (422, 149, 78, 22), (422, 172, 78, 22),
@@ -1150,6 +1150,10 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
                         item = QTableWidgetItem(str(choice))
                         self.table_widget.setItem(row_index, column_idx, item)
                         item.setTextAlignment(Qt.AlignCenter)
+    
+    def read_img_with_cv(self, img_path):
+        img_array = np.fromfile(img_path, np.uint8)
+        return cv2.imdecode(img_array, cv2.IMREAD_COLOR)
 
     def load_answer(self):  # 정답과 배점 불러오기
         selected_item = self.cb.currentText()
