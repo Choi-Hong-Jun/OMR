@@ -1176,12 +1176,24 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
         total_score = 0
 
         for idx, (user_answer, (correct_answer, score)) in enumerate(zip(omr_answers, answers_scores)):
+            # need to match between multiple user answer and multiple correct answer
+            # both answers' type should be list
+            assert isinstance(user_answer, list), f'user_answer type is {type(user_answer)}'
+            assert isinstance(correct_answer, list), f'correct_answer type is {type(correct_answer)}'
+
+            _user_answer = ','.join(sorted(user_answer))
+            _correct_answer = ','.join(sorted(correct_answer))
+            if _user_answer == _correct_answer:
+                total_score += score
+
             # user answer can be multiple ? if list, it is not wrong answer ?
+            '''
             if isinstance(user_answer, list) and user_answer:
                 user_answer = user_answer[0]
 
             if str(user_answer) in str(correct_answer):
                 total_score += score
+            '''
 
             # to get answer as tuple ? to support multiple answer case ?
             '''
