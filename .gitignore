@@ -1,0 +1,5 @@
+.venv/*
+print_page_*.html
+*_table_*.json
+*_page*.png
+list_items.txt
