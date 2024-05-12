@@ -4,3 +4,4 @@ print_page_*.html
 *_page*.png
 list_items.txt
 *.pdf
+**/__pycache__/*
