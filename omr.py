@@ -1125,7 +1125,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
                 avg_pixel_value = np.mean(choice_img)
 
                 if avg_pixel_value < 225:
-                    choices.append(j + 1)
+                    choices.append(str(j + 1))
 
             omr_answers.append(choices)
         self.omr_grading(omr_answers)
@@ -1182,11 +1182,11 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
                             answers_scores.append((real_answer, score))
                     return answers_scores
 
-    def omr_grading(self, omr_answers):   # omr 총점 계산
-        answers_scores = self.load_answer()
+    def make_score(self, user_answers, answer_sheet):
         total_score = 0
 
-        for idx, (user_answer, (correct_answer, score)) in enumerate(zip(omr_answers, answers_scores)):
+        for user_answer, (correct_answer, score) in zip(user_answers, answer_sheet):
+            # print(f'U: {user_answer}, C: {correct_answer}')
             # need to match between multiple user answer and multiple correct answer
             # both answers' type should be list
             assert isinstance(user_answer, list), f'user_answer type is {type(user_answer)}'
@@ -1197,29 +1197,17 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
             if _user_answer == _correct_answer:
                 total_score += score
 
-            # user answer can be multiple ? if list, it is not wrong answer ?
-            '''
-            if isinstance(user_answer, list) and user_answer:
-                user_answer = user_answer[0]
+        return total_score
 
-            if str(user_answer) in str(correct_answer):
-                total_score += score
-            '''
-
-            # to get answer as tuple ? to support multiple answer case ?
-            '''
-            if isinstance(user_answer, int) and isinstance(correct_answer, tuple):
-                if user_answer == correct_answer[0]:
-                    total_score += score
-            elif isinstance(user_answer, int) and isinstance(correct_answer, int):
-                if user_answer == correct_answer:
-                    total_score += score
-            '''
+    def omr_grading(self, omr_answers):   # omr 총점 계산
+        answers_scores = self.load_answer()
+        total_score = self.make_score(omr_answers, answers_scores)
 
         row_index = 0
         while True:
             current_item = self.table_widget.item(row_index, 3)
             if current_item is None or current_item.text() == "":
+                # print(f'[{row_index}] {total_score}')
                 item = QTableWidgetItem(str(total_score))
                 self.table_widget.setItem(row_index, 3, item)
                 item.setTextAlignment(Qt.AlignCenter)
@@ -1242,12 +1230,9 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
                         cell_item = self.table_widget.item(row_idx, column)
                         if cell_item is not None:
                             cell_item.setTextAlignment(Qt.AlignCenter)
-                            answers.append(int(cell_item.text()))
+                            answers.append([cell_item.text()])
 
-                    for idx, (correct_answer, score) in enumerate(answers_scores):
-                        if idx < len(answers) and answers[idx] == correct_answer:
-                            total_score += score
-
+                    total_score = self.make_score(answers, answers_scores)
                     total_score_item = QTableWidgetItem(str(total_score))
                     self.table_widget.setItem(row_idx, 3, total_score_item)
                     total_score_item.setTextAlignment(Qt.AlignCenter)
