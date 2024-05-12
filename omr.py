@@ -1163,10 +1163,17 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
                     for question in questions:
                         if isinstance(question, dict):
                             real_answer_str = question.get("정답", "")
+                            # store real answer as list type to match with multiple answers
+                            # need to make a separator (normally use ,)
+                            real_answer = real_answer_str.split(',')
+
+                            '''
                             if real_answer_str:
                                 real_answer = int(real_answer_str)
                             else:
                                 real_answer = 0
+                            '''
+
                             score = int(question.get("배점", 0))
                             answers_scores.append((real_answer, score))
                     return answers_scores
