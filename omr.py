@@ -37,7 +37,7 @@ class MainWidget(QWidget):   # 메인 화면
 
         self.setLayout(vbox)
 
-        self.notice_label = QLabel("유의 사항\n\n\n\n\n   1. 복수 정답 불가능\n\n   2.omr 결과 틀릴 수 있으니까 꼭 대조", self)
+        self.notice_label = QLabel("유의 사항\n\n\n\n\n   1. 복수시 콤마사용 예) 1,2\n\n   2.omr 결과 틀릴 수 있으니까 꼭 대조", self)
         self.notice_label.setFont(QFont('Arial', 40))
         self.notice_label.setAlignment(Qt.AlignCenter)
         self.notice_label.setWordWrap(True)
