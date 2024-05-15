@@ -208,7 +208,7 @@ class OMRReader:
                 start_y = int(h * i / 10)
                 end_y = int(h * (i + 1) / 10)
                 choice_img = question_img[start_y:end_y, :]
-                avg_pixel_value = np.mean(choice_img)
+                avg_pixel_value = int(np.mean(choice_img))
                 rawdat.append(avg_pixel_value)
 
                 # if avg_pixel_value < threshold:
@@ -248,13 +248,12 @@ class OMRReader:
                         num_questions = data["num_questions"]
                     else:
                         return
-
         else:
             print('## No Item Name, Quit')
             return
 
         desired_coordinates_count = int(num_questions)
-        threshold = 225
+        # threshold = 225
         for question_idx, coordinates in enumerate(user_coordinates):
             if question_idx >= desired_coordinates_count:
                 break
@@ -262,17 +261,21 @@ class OMRReader:
             x, y, w, h = coordinates
             question_img = gray[y:y + h, x:x + w]
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            choices = []
+            # choices = []
+            rawdat = list()
             for j in range(5):
                 start_x = int(w * j / 5)
                 end_x = int(w * (j + 1) / 5)
                 choice_img = question_img[:, start_x:end_x]
-                avg_pixel_value = np.mean(choice_img)
+                avg_pixel_value = int(np.mean(choice_img))
+                rawdat.append(avg_pixel_value)
 
-                if avg_pixel_value < threshold:
-                    choices.append(str(j + 1))
+                # if avg_pixel_value < threshold:
+                #     choices.append(str(j + 1))
 
-            omr_answers.append(choices)
+            # omr_answers.append(choices)
+            ret = self.select_filled_loc_without_threshold(rawdat, None)
+            omr_answers.append([str(ret['index_min'] + 1)])
 
         return omr_answers
     
