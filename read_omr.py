@@ -16,6 +16,7 @@ class OMRReader:
         self.pdf_document = fitz.open(self.pdf_filename)
         self.nr_pages = len(self.pdf_document)
         self.all_img_path = list()
+        self.alldat = list()
 
         with open('korean_data.json', encoding='utf-8') as f:
             self.map_kor = json.load(f)
@@ -109,29 +110,29 @@ class OMRReader:
 
             rawdat.append(avg_pixel_value)
 
+        # store all values for debugging
+        self.alldat.append(rawdat)
+
         mean_colored = 0
+        margin = 30
         if self.colored:
-            mean_colored = int(np.mean(self.colored))
+            mean_colored = int(np.mean(self.colored)) + margin
 
-        ret = self.select_filled_loc(rawdat, threshold, mean_colored)
+        # Solution 1) pick colored one with Threshold
+        # ret = self.select_filled_loc(rawdat, threshold, mean_colored)
+        # chosen = self.get_chosen_char(ret, _type)
 
-        chosen = None
-        if len(ret['index_under_threshold']) == 1:
-            chosen = ret['index_under_threshold'][0]
-        elif ret['index_min'] in ret['index_under_threshold'] or\
-             ret['index_min'] in ret['index_under_threshold2']:
-            chosen = ret['index_min']
-        elif (not ret['index_under_threshold'] and not ret['index_under_threshold2']) and\
-             _type in ['cho', 'jung']:
-            chosen = ret['index_min']
+        # Solution 2) pick from min-max scaling values
+        ret = self.select_filled_loc_without_threshold(rawdat, mean_colored)
+        chosen = self.get_chosen_char2(ret, _type)
 
         if chosen != None:
-            print(f'* {_map[chosen]} {rawdat[chosen]} / [{threshold},{mean_colored}] {rawdat} / {ret}')
+            # print(f'* {_map[chosen]} {rawdat[chosen]} / [{threshold},{mean_colored:3}] {rawdat} / {ret}')
             self.colored.append(rawdat[chosen])
             return _map[chosen]
-        else:
-            print(f'# [{threshold},{mean_colored}] {rawdat} / {ret}')
-        
+
+        # print(f'#        / [{threshold},{mean_colored:3}] {rawdat} / {ret}')
+
     def select_filled_loc(self, rawdat, threshold, threshold2=None):
         # how to distinguish efficiently? normalization ?
         # normdat = [round(float(i)/sum(rawdat)*100, 2) for i in rawdat]
@@ -148,6 +149,42 @@ class OMRReader:
             'index_under_threshold' : under_1,
             'index_under_threshold2' : under_2,
         }
+
+    def get_chosen_char(self, dat, _type):
+        chosen = None
+        if len(dat['index_under_threshold']) == 1:
+            chosen = dat['index_under_threshold'][0]
+        elif dat['index_min'] in dat['index_under_threshold'] or\
+             dat['index_min'] in dat['index_under_threshold2']:
+            chosen = dat['index_min']
+        elif (not dat['index_under_threshold'] and not dat['index_under_threshold2']) and\
+             _type in ['cho', 'jung']:
+            chosen = dat['index_min']
+
+        return chosen
+
+    def get_minmax_scaled(self, target):
+        return [(x- np.min(target)) / (np.max(target) - np.min(target)) for x in target]
+
+    def select_filled_loc_without_threshold(self, rawdat, prev_mean=None):
+        mm = self.get_minmax_scaled(rawdat)
+        mean_mm = np.mean(mm)
+        min2 = sorted(mm)[1]
+
+        # TODO: 0.6 and 0.3 are heuristics, need to get more cases
+        if mean_mm > 0.6 or min2 > 0.3:
+            _index = mm.index(0)
+            # TODO: this format for threshold method to get colored
+            return {
+                'index_min' : _index,
+                'index_under' : [_index],
+            }
+        else:
+            return {'index_min':None, 'index_under':None}
+
+    def get_chosen_char2(self, dat, _type):
+        # TODO: already decided in select_filled_loc_without_threshold
+        return dat['index_min']
 
     def extract_number(self, img, gray):   # omr 학번 표에 삽입
         omr_numbers = []
@@ -257,3 +294,6 @@ if __name__ == '__main__':
         _ans = o.extract_omr(img, gray_img)
 
         print(f'{f}: {_name} / {_num} / {_ans}')
+
+    with open('alldata.json', 'w') as f:
+        json.dump(o.alldat, f, indent=4)
