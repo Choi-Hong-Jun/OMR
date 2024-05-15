@@ -198,6 +198,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
         #         break
 
     def update_number(self, num):
+        current_row = 0
         while current_row < self.table_widget.rowCount():
             item = self.table_widget.item(current_row, 1)
             if item is None or item.text() == '':
