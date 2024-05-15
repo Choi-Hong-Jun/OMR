@@ -39,7 +39,7 @@ class OMRReader:
 
     def extract_name(self, img, gray):   # omr 이름 표에 삽입
         fullname = list()
-        self.first_colored = None
+        self.colored = list()
 
         fullname.append(self.extract_each_name(img, gray, [
             ((183, 277, 17, 200), self.map_kor['jamo1'], 210),
@@ -105,35 +105,49 @@ class OMRReader:
             start_y = int(h * i / len(_map))
             end_y = int(h * (i + 1) / len(_map))
             choice_img = question_img[start_y:end_y, :]
-            avg_pixel_value = round(np.mean(choice_img), 2)
+            avg_pixel_value = int(np.mean(choice_img))
 
             rawdat.append(avg_pixel_value)
 
+        mean_colored = 0
+        if self.colored:
+            mean_colored = int(np.mean(self.colored))
+
+        ret = self.select_filled_loc(rawdat, threshold, mean_colored)
+
+        chosen = None
+        if len(ret['index_under_threshold']) == 1:
+            chosen = ret['index_under_threshold'][0]
+        elif ret['index_min'] in ret['index_under_threshold'] or\
+             ret['index_min'] in ret['index_under_threshold2']:
+            chosen = ret['index_min']
+        elif (not ret['index_under_threshold'] and not ret['index_under_threshold2']) and\
+             _type in ['cho', 'jung']:
+            chosen = ret['index_min']
+
+        if chosen != None:
+            print(f'* {_map[chosen]} {rawdat[chosen]} / [{threshold},{mean_colored}] {rawdat} / {ret}')
+            self.colored.append(rawdat[chosen])
+            return _map[chosen]
+        else:
+            print(f'# [{threshold},{mean_colored}] {rawdat} / {ret}')
+        
+    def select_filled_loc(self, rawdat, threshold, threshold2=None):
         # how to distinguish efficiently? normalization ?
         # normdat = [round(float(i)/sum(rawdat)*100, 2) for i in rawdat]
-        choices = list()
+        under_1 = list()
+        under_2 = list()
         for i, d in enumerate(rawdat):
             if d < threshold:
-                if not self.first_colored:
-                    self.first_colored = rawdat[i]
+                under_1.append(i)
+            if threshold2 and d < threshold2:
+                under_2.append(i)
 
-                choices.append(_map[i])
-
-        if not choices and not self.first_colored:
-            for i, d in enumerate(rawdat):
-                if d < (self.first_colored + 5):
-                    choices.append(_map[i])
-
-        mindat_char = _map[rawdat.index(np.min(rawdat))]
-
-        # debugging log for each value
-        # print(f'* {choices} / {_map[rawdat.index(np.min(rawdat))]} {np.min(rawdat)} / [{threshold},{self.first_colored}] {rawdat}')
-        if len(choices) == 1:
-            return ''.join(choices)
-        elif mindat_char in choices:
-            return mindat_char
-        elif not choices and _type in ['cho', 'jung']:
-            return mindat_char
+        return {
+            'index_min' : rawdat.index(np.min(rawdat)),
+            'index_under_threshold' : under_1,
+            'index_under_threshold2' : under_2,
+        }
 
     def extract_number(self, img, gray):   # omr 학번 표에 삽입
         omr_numbers = []
