@@ -1,8 +1,5 @@
 import os
 import json
-import cv2
-import fitz
-import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QFileDialog, QTableWidget,
                              QLabel, QLineEdit, QTableWidgetItem, QComboBox, QStackedWidget)
