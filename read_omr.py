@@ -171,6 +171,7 @@ class OMRReader:
         mean_mm = np.mean(mm)
         min2 = sorted(mm)[1]
 
+        # print(mm, round(mean_mm,2), min2)
         # TODO: 0.6 and 0.3 are heuristics, need to get more cases
         if mean_mm > 0.6 or min2 > 0.3:
             _index = mm.index(0)
@@ -194,24 +195,28 @@ class OMRReader:
             (127, 270, 11, 245),
             (142, 270, 11, 245)
         ]
-        threshold = 210
+        # threshold = 210
 
         for coordinates in user_coordinates:
             x, y, w, h = coordinates
             question_img = gray[y:y + h, x:x + w]
 
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            choices = []
+            # choices = []
+            rawdat = list()
             for i in range(10):
                 start_y = int(h * i / 10)
                 end_y = int(h * (i + 1) / 10)
                 choice_img = question_img[start_y:end_y, :]
                 avg_pixel_value = np.mean(choice_img)
+                rawdat.append(avg_pixel_value)
 
-                if avg_pixel_value < threshold:
-                    choices.append(i)
+                # if avg_pixel_value < threshold:
+                #     choices.append(i)
 
-            omr_numbers.append(choices)
+            # omr_numbers.append(choices)
+            ret = self.select_filled_loc_without_threshold(rawdat, None)
+            omr_numbers.append([ret['index_min']])
 
         return int(''.join(str(num[0]) if num else '0' for num in omr_numbers))
 
@@ -293,7 +298,7 @@ if __name__ == '__main__':
         _num = o.extract_number(img, gray_img)
         _ans = o.extract_omr(img, gray_img)
 
-        print(f'{f}: {_name} / {_num} / {_ans}')
+        print(f'{f}: {_name} / {_num:04} / {_ans}')
 
     with open('alldata.json', 'w') as f:
         json.dump(o.alldat, f, indent=4)
