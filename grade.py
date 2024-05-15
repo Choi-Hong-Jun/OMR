@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QFileDialog, QTa
                              QLabel, QLineEdit, QTableWidgetItem, QComboBox, QStackedWidget)
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import Qt
+from read_omr import OMRReader
 
 class OMRGradingWidget(QWidget):    # OMR 채점 화면
 
@@ -128,8 +129,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
                         if str(column - 3).isdigit():
                             self.table_widget.setColumnWidth(column, 50)
 
-    def updateRow(self, pdf_document):  # 표의 행 수 조정
-        row_count = len(pdf_document) if pdf_document else 0
+    def updateRow(self, row_count):  # 표의 행 수 조정
         self.table_widget.setRowCount(row_count)
 
         for row_index in range(row_count):   # 학급명 표에 입력
@@ -140,14 +140,100 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
 
     def uploadFile(self):  # 파일 찾기
         file_path, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;Text Files (*.txt)")
-        if file_path:
-            pdf_document = fitz.open(file_path)
-            self.pdf_to_png(pdf_document)
 
+        assert os.path.exists(file_path), f'no such {file_path}'
+
+        self.omr_reader = OMRReader(file_path, self.line_edit.text(), self.cb.currentText())
+        self.omr_reader.convert_pdf_to_png()
+        nr_pages = len(self.omr_reader.all_img_path)
+
+        # update row with number of pages in pdf
+        self.updateRow(nr_pages)
+
+        for each_file in self.omr_reader.all_img_path:
+            img, gray_img = self.omr_reader.read_img_with_cv_as_gray(each_file)
+
+            self.addPageToStackedWidget(each_file)
+
+            _name = self.omr_reader.extract_name(img, gray_img)
+            self.update_name(_name)
+
+            _num = self.omr_reader.extract_number(img, gray_img)
+            self.update_number(_num)
+
+            _ans = self.omr_reader.extract_omr(img, gray_img)
+            self.omr_grading(_ans)
+            self.update_answer(_ans)
+
+        if nr_pages > 1:
+            self.btn_prevpage.show()
+            self.btn_nextpage.show()
+        else:
+            self.btn_prevpage.hide()
+            self.btn_nextpage.hide()
+
+        # if file_path:
+        #     pdf_document = fitz.open(file_path)
+        #     self.pdf_to_png(pdf_document)
+
+    def update_name(self, one_name):
+        current_row = 0
+        while current_row < self.table_widget.rowCount():
+            item = self.table_widget.item(current_row, 0)
+            if item is None or item.text() == '':
+                item = QTableWidgetItem(one_name)
+                self.table_widget.setItem(current_row, 0, item)
+                item.setTextAlignment(Qt.AlignCenter)
+                break
+            current_row += 1
+
+        # Refactoring example
+        #
+        # for row_index in range(self.table_widget.rowCount()):
+        #     item = self.table_widget.item(row_index, 0)
+        #     if not item or not item.text():
+        #         item = QTableWidgetItem(one_name)
+        #         self.table_widget.setItem(row_index, 0, item)
+        #         item.setTextAlignment(Qt.AlignCenter)
+        #         break
+
+    def update_number(self, num):
+        while current_row < self.table_widget.rowCount():
+            item = self.table_widget.item(current_row, 1)
+            if item is None or item.text() == '':
+                item = QTableWidgetItem(str(num))
+                self.table_widget.setItem(current_row, 1, item)
+                item.setTextAlignment(Qt.AlignCenter)
+                break
+            current_row += 1
+
+    def update_answer(self, ans):
+        for column_idx, column_answers in enumerate(ans, start=4):
+            row_index = 0
+            for choice in column_answers:
+                current_item = self.table_widget.item(row_index, column_idx)
+                if current_item is None or current_item.text() == "":
+                    item = QTableWidgetItem(str(choice))
+                    self.table_widget.setItem(row_index, column_idx, item)
+                    item.setTextAlignment(Qt.AlignCenter)
+                else:
+                    while True:
+                        row_index += 1
+                        if row_index >= self.table_widget.rowCount():
+                            break
+                        if self.table_widget.item(row_index, column_idx) is None or\
+                            self.table_widget.item(row_index, column_idx).text() == "":
+                            break
+                    if row_index < self.table_widget.rowCount():
+                        item = QTableWidgetItem(str(choice))
+                        self.table_widget.setItem(row_index, column_idx, item)
+                        item.setTextAlignment(Qt.AlignCenter)
+    
     def pdf_to_png(self, pdf_document):  # pdf 파일 png 파일로 변환
         class_name = self.line_edit.text()
         selected_item = self.cb.currentText()
-        self.updateRow(pdf_document)
+        row_count = len(pdf_document) if pdf_document else 0
+        self.updateRow(row_count)
 
         for page_number in range(len(pdf_document)):
             page = pdf_document.load_page(page_number)
