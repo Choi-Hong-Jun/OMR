@@ -7,7 +7,8 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import Qt
 from read_omr import OMRReader
 
-class OMRGradingWidget(QWidget):    # OMR 채점 화면
+
+class OMRGradingWidget(QWidget):  # OMR 채점 화면
 
     def __init__(self):
         super().__init__()
@@ -59,7 +60,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
         self.label.setGeometry(190, 20, 200, 50)
         self.label.show()
 
-        self.cb = QComboBox(self)   # 시험지 항목 콤보 박스 생성
+        self.cb = QComboBox(self)  # 시험지 항목 콤보 박스 생성
         self.cb.setGeometry(280, 30, 160, 30)
         self.cb.activated.connect(self.updateCol)
         self.cb.activated.connect(self.load_answer)
@@ -77,7 +78,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
         btn1.clicked.connect(self.showExamInputWidget)
         btn3.clicked.connect(self.showSendReportWidget)
 
-        self.stacked_widget = QStackedWidget(self)   # pdf 파일 출력 다중 페이지 어플 생성
+        self.stacked_widget = QStackedWidget(self)  # pdf 파일 출력 다중 페이지 어플 생성
         self.stacked_widget.setGeometry(500, 420, 1000, 600)
 
         self.btn_prevpage = QPushButton("이전 화면", self)
@@ -93,14 +94,14 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
         self.stacked_widget.show()
         self.show()
 
-    def loadItems(self):   # 콤보 박스의 항목 정보 불러오기
+    def loadItems(self):  # 콤보 박스의 항목 정보 불러오기
         self.cb.addItem("")
         if os.path.exists("list_items.txt"):
             with open("list_items.txt", "r", encoding="utf-8") as file:
                 items = file.readlines()
                 self.cb.addItems(item.strip() for item in items)
 
-    def updateCol(self):   # 표의 열 수 조정
+    def updateCol(self):  # 표의 열 수 조정
         selected_item = self.cb.currentText()
         if selected_item:
             file_name = f"{selected_item}_table_data.json"
@@ -129,7 +130,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
     def updateRow(self, row_count):  # 표의 행 수 조정
         self.table_widget.setRowCount(row_count)
 
-        for row_index in range(row_count):   # 학급명 표에 입력
+        for row_index in range(row_count):  # 학급명 표에 입력
             text = self.line_edit.text()
             item = QtWidgets.QTableWidgetItem(text)
             self.table_widget.setItem(row_index, 2, item)
@@ -210,7 +211,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
                         item = QTableWidgetItem(str(choice))
                         self.table_widget.setItem(row_index, column_idx, item)
                         item.setTextAlignment(Qt.AlignCenter)
-    
+
     def load_answer(self):  # 정답과 배점 불러오기
         selected_item = self.cb.currentText()
         if selected_item:
@@ -223,28 +224,16 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
                     for question in questions:
                         if isinstance(question, dict):
                             real_answer_str = question.get("정답", "")
-                            # store real answer as list type to match with multiple answers
-                            # need to make a separator (normally use ,)
                             real_answer = real_answer_str.split(',')
-
-                            '''
-                            if real_answer_str:
-                                real_answer = int(real_answer_str)
-                            else:
-                                real_answer = 0
-                            '''
 
                             score = int(question.get("배점", 0))
                             answers_scores.append((real_answer, score))
                     return answers_scores
 
-    def make_score(self, user_answers, answer_sheet):
+    def make_score(self, user_answers, answer_sheet):   # 점수 계산
         total_score = 0
 
         for user_answer, (correct_answer, score) in zip(user_answers, answer_sheet):
-            # print(f'U: {user_answer}, C: {correct_answer}')
-            # need to match between multiple user answer and multiple correct answer
-            # both answers' type should be list
             assert isinstance(user_answer, list), f'user_answer type is {type(user_answer)}'
             assert isinstance(correct_answer, list), f'correct_answer type is {type(correct_answer)}'
 
@@ -255,7 +244,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
 
         return total_score
 
-    def omr_grading(self, omr_answers):   # omr 총점 계산
+    def omr_grading(self, omr_answers):  # omr 총점 계산
         answers_scores = self.load_answer()
         total_score = self.make_score(omr_answers, answers_scores)
 
@@ -263,7 +252,6 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
         while True:
             current_item = self.table_widget.item(row_index, 3)
             if current_item is None or current_item.text() == "":
-                # print(f'[{row_index}] {total_score}')
                 item = QTableWidgetItem(str(total_score))
                 self.table_widget.setItem(row_index, 3, item)
                 item.setTextAlignment(Qt.AlignCenter)
@@ -273,7 +261,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
                 if row_index >= self.table_widget.rowCount():
                     break
 
-    def updateTotalScore(self, item):   # 표의 항목 변경시 총점 변경
+    def updateTotalScore(self, item):  # 표의 항목 변경시 총점 변경
         if item.column() >= 5:
             selected_item = self.cb.currentText()
             if selected_item:
@@ -293,7 +281,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
                     self.table_widget.setItem(row_idx, 3, total_score_item)
                     total_score_item.setTextAlignment(Qt.AlignCenter)
 
-    def addPageToStackedWidget(self, img_path):   # 다중 페이지 어플에 페이지 추가
+    def addPageToStackedWidget(self, img_path):  # 다중 페이지 어플에 페이지 추가
         label = QLabel()
         pixmap = QPixmap(img_path)
         label.setPixmap(pixmap)
@@ -301,7 +289,7 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
 
         self.stacked_widget.addWidget(label)
 
-    def saveScore(self):   # 표의 값들 저장
+    def saveScore(self):  # 표의 값들 저장
         new_table_data = {
             "score": []
         }
@@ -327,30 +315,27 @@ class OMRGradingWidget(QWidget):    # OMR 채점 화면
         with open(file_name, "w", encoding="utf-8") as json_file:
             json.dump(table_data, json_file, ensure_ascii=False, indent=4)
 
-    def previousPage(self):   # 다중 페이지 어플의 이전 페이지 이동
+    def previousPage(self):  # 다중 페이지 어플의 이전 페이지 이동
         current_index = self.stacked_widget.currentIndex()
         if current_index > 0:
             self.stacked_widget.setCurrentIndex(current_index - 1)
 
-    def nextPage(self):   # 다중 페이지 어플의 다음 페이지 이동
+    def nextPage(self):  # 다중 페이지 어플의 다음 페이지 이동
         current_index = self.stacked_widget.currentIndex()
         if current_index < self.stacked_widget.count() - 1:
             self.stacked_widget.setCurrentIndex(current_index + 1)
 
     def showMainWidget(self):
-        #TODO: circular import ?
         from omr import MainWidget
-        self.exam_input_widget = MainWidget()
+        self.exam_input_widget = MainWidget()     # 새로운 화면 생성
         self.hide()
 
     def showSendReportWidget(self):
-        #TODO: circular import ?
         from report import SendReportWidget
         self.exam_input_widget = SendReportWidget()
         self.hide()
 
     def showExamInputWidget(self):
-        #TODO: circular import ?
         from exam_input import ExamInputWidget
-        self.exam_input_widget = ExamInputWidget()   # 새로운 화면 생성
-        self.hide()   # 새로운 화면 생성
+        self.exam_input_widget = ExamInputWidget()
+        self.hide()
