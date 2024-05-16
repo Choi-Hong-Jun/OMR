@@ -37,7 +37,7 @@ class MainWidget(QWidget):   # 메인 화면
 
         self.setLayout(vbox)
 
-        self.notice_label = QLabel("유의 사항\n\n\n\n\n   1. 복수시 콤마사용 예) 1,2\n\n   2.omr 결과 틀릴 수 있으니까 꼭 대조", self)
+        self.notice_label = QLabel("유의 사항\n\n\n   1. 복수정답시 콤마 사용 예) 1,2\n\n   2. omr 결과 꼭 대조\n\n   3. omr 용지가 모두 올바른 방향으로 스캔되어야 사용 가능", self)
         self.notice_label.setFont(QFont('Arial', 40))
         self.notice_label.setAlignment(Qt.AlignCenter)
         self.notice_label.setWordWrap(True)
@@ -61,7 +61,7 @@ class MainWidget(QWidget):   # 메인 화면
 
     def showExamInputWidget(self):
         self.exam_input_widget = ExamInputWidget()   # 새로운 화면 생성
-        self.hide()   # 새로운 화면 생성
+        self.hide()
 
     def showOMRGradingWidget(self):
         self.exam_input_widget = OMRGradingWidget()
