@@ -65,21 +65,12 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
 
         self.btn_select = QPushButton("모두 선택", self)
         self.btn_cancel = QPushButton("모두 취소", self)
-        self.btn_loadst = QPushButton("학생정보 가져오기", self)
-        self.btn_savest = QPushButton("학생정보 저장", self)
-        self.btn_send = QPushButton("성적표 문자 전송", self)
         self.btn_print = QPushButton("인쇄", self)
         self.btn_select.setFixedSize(120, 40)
         self.btn_cancel.setFixedSize(120, 40)
-        self.btn_loadst.setFixedSize(120, 40)
-        self.btn_savest.setFixedSize(120, 40)
-        self.btn_send.setFixedSize(120, 40)
         self.btn_print.setFixedSize(120, 40)
         self.btn_select.move(180, 100)
         self.btn_cancel.move(380, 100)
-        self.btn_loadst.move(580, 100)
-        self.btn_savest.move(780, 100)
-        self.btn_send.move(980, 100)
         self.btn_print.move(1180, 100)
         self.btn_select.clicked.connect(self.selectCb)
         self.btn_cancel.clicked.connect(self.cancelCb)
@@ -87,9 +78,6 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
 
         self.btn_select.show()
         self.btn_cancel.show()
-        self.btn_loadst.show()
-        self.btn_savest.show()
-        self.btn_send.show()
         self.btn_print.show()
 
         self.show()
@@ -189,10 +177,48 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                 file_path = f"print_page_{i}.html"
                 combo_box_text = self.cb.currentText()
                 table_item_text = self.table_widget.item(index.row(), 1).text()
+                score_value = self.table_widget.item(index.row(), 6).data(Qt.DisplayRole)
                 with open(file_path, "w", encoding="utf-8") as file:
                     title = f"{combo_box_text} - {table_item_text}"
                     file.write(
-                        f"<html><head><meta charset='utf-8'><title>{title}</title></head><body style='background-color:white;'></body></html>")
+                        f"""
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset='utf-8'>
+                            <title>{title}</title>
+                            <style>
+                                @page {{
+                                    size: A4;
+                                    margin: 1;
+                                    border: 1cm solid black;
+                                }}
+                                body {{
+                                    margin: 1;
+                                    font-family: sans-serif;
+                                }}
+                                .logo {{
+                                    position: absolute;
+                                    top: 10px;
+                                    left: 10px;
+                                    max-width: 100px;
+                                    max-height: 100px;
+                                }}
+                                .content{{
+                                    margin-top: 120px;
+                                    margin-left: 10px;
+                                    font-family: sans-serif;
+                                }}
+                            </style>
+                        </head>
+                        <body style='background-color:white;'>
+                            <img src="logo.jpeg" alt="로고" class="logo">
+                            <div class="content">
+                                <p>반명 : {combo_box_text}<br> 이름 : {table_item_text}<br> 총점: {score_value}</p>
+                            </div>
+                        </body>
+                        </html>
+                    """)
                 webbrowser.open("file://" + os.path.realpath(file_path))
 
     def getCheckedIndexes(self):
@@ -218,28 +244,21 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
         return checked_count
 
     def showMainWidget(self):
-        #TODO: circular import ?
         from omr import MainWidget
         self.exam_input_widget = MainWidget()
         self.hide()
 
     def showOMRGradingWidget(self):
-        #TODO: circular import ?
         from grade import OMRGradingWidget
         self.exam_input_widget = OMRGradingWidget()
         self.hide()
 
     def showSendReportWidget(self):
-        #TODO: circular import ?
         from report import SendReportWidget
         self.exam_input_widget = SendReportWidget()
         self.hide()
 
     def showExamInputWidget(self):
-        #TODO: circular import ?
         from exam_input import ExamInputWidget
-        self.exam_input_widget = ExamInputWidget()   # 새로운 화면 생성
-        self.hide()   # 새로운 화면 생성
-
-
-
+        self.exam_input_widget = ExamInputWidget()
+        self.hide()
