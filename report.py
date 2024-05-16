@@ -6,6 +6,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QPersistentModelIndex
 from PyQt5.QtCore import Qt
 import webbrowser
+import math
 
 class SendReportWidget(QWidget):  # 성적표 인쇄 화면
 
@@ -178,6 +179,15 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                 combo_box_text = self.cb.currentText()
                 table_item_text = self.table_widget.item(index.row(), 1).text()
                 score_value = self.table_widget.item(index.row(), 6).data(Qt.DisplayRole)
+                num_sides = max(0, self.table_widget.columnCount() - 7)
+
+                polygon_points = []
+                for i in range(num_sides):
+                    angle = 2 * math.pi * i / num_sides
+                    x = 50 + 40 * math.cos(angle)
+                    y = 50 + 40 * math.sin(angle)
+                    polygon_points.append(f"{x},{y}")
+
                 with open(file_path, "w", encoding="utf-8") as file:
                     title = f"{combo_box_text} - {table_item_text}"
                     file.write(
@@ -191,7 +201,6 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                 @page {{
                                     size: A4;
                                     margin: 1;
-                                    border: 1cm solid black;
                                 }}
                                 body {{
                                     margin: 1;
@@ -204,8 +213,9 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                     max-width: 100px;
                                     max-height: 100px;
                                 }}
-                                .content{{
-                                    margin-top: 120px;
+                                .content {{
+                                    position: relative;
+                                    margin-top: 100px;
                                     margin-left: 10px;
                                     font-family: sans-serif;
                                 }}
@@ -215,6 +225,9 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                             <img src="logo.jpeg" alt="로고" class="logo">
                             <div class="content">
                                 <p>반명 : {combo_box_text}<br> 이름 : {table_item_text}<br> 총점: {score_value}</p>
+                                <svg width="100" height="100" style="position: absolute; top: 10mm; right: 10mm;">
+                                    <polygon points="{', '.join(polygon_points)}" fill="white" stroke="black" />
+                                </svg>
                             </div>
                         </body>
                         </html>
