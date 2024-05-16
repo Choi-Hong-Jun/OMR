@@ -290,21 +290,16 @@ class ExamInputWidget(QWidget):   # 시험 입력 화면
                             self.table_widget.setItem(row, column, item)
 
     def showMainWidget(self):
-        #TODO: circular import ?
         from omr import MainWidget
         self.exam_input_widget = MainWidget()
         self.hide()
 
     def showOMRGradingWidget(self):
-        #TODO: circular import ?
         from grade import OMRGradingWidget
         self.exam_input_widget = OMRGradingWidget()
         self.hide()
 
     def showSendReportWidget(self):
-        #TODO: circular import ?
         from report import SendReportWidget
         self.exam_input_widget = SendReportWidget()
         self.hide()
-
-
