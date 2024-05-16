@@ -171,7 +171,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                 if isinstance(checkbox, QCheckBox):
                     checkbox.setChecked(False)
 
-    def printPage(self):   # 성적표 출력
+    def printPage(self):  # 성적표 출력
         checked_indexes = self.getCheckedIndexes()
         if checked_indexes:
             for i, index in enumerate(checked_indexes):
@@ -184,8 +184,8 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                 polygon_points = []
                 for i in range(num_sides):
                     angle = 2 * math.pi * i / num_sides
-                    x = 50 + 40 * math.cos(angle)
-                    y = 50 + 40 * math.sin(angle)
+                    x = 250 + 40 * math.cos(angle)
+                    y = 40 + 40 * math.sin(angle)
                     polygon_points.append(f"{x},{y}")
 
                 with open(file_path, "w", encoding="utf-8") as file:
@@ -225,7 +225,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                             <img src="logo.jpeg" alt="로고" class="logo">
                             <div class="content">
                                 <p>반명 : {combo_box_text}<br> 이름 : {table_item_text}<br> 총점: {score_value}</p>
-                                <svg width="100" height="100" style="position: absolute; top: 10mm; right: 10mm;">
+                                <svg width="500" height="500" x="500" y="100">
                                     <polygon points="{', '.join(polygon_points)}" fill="white" stroke="black" />
                                 </svg>
                             </div>
