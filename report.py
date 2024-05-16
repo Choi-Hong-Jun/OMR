@@ -150,7 +150,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
             score_item.setTextAlignment(Qt.AlignCenter)
             self.table_widget.setItem(row, 6, score_item)
 
-    def selectCb(self):
+    def selectCb(self):   # 모두 선택
         row_count = self.table_widget.rowCount()
 
         for row in range(row_count):
@@ -160,7 +160,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                 if isinstance(checkbox, QCheckBox):
                     checkbox.setChecked(True)
 
-    def cancelCb(self):
+    def cancelCb(self):   # 모두 취소
         row_count = self.table_widget.rowCount()
 
         for row in range(row_count):
@@ -170,7 +170,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                 if isinstance(checkbox, QCheckBox):
                     checkbox.setChecked(False)
 
-    def printPage(self):
+    def printPage(self):   # 성적표 출력
         checked_indexes = self.getCheckedIndexes()
         if checked_indexes:
             for i, index in enumerate(checked_indexes):
