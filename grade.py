@@ -1,3 +1,4 @@
+import sys
 import os
 import json
 import cv2
@@ -10,6 +11,13 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import Qt
 
 
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 class OMRGradingWidget(QWidget):  # OMR 채점 화면
 
     def __init__(self):
@@ -19,7 +27,8 @@ class OMRGradingWidget(QWidget):  # OMR 채점 화면
 
     def initUI(self):
         self.setWindowTitle('OMR 채점 화면')
-        self.setWindowIcon(QIcon('logo.jpeg'))
+        icon_path = resource_path('gr.jpg')
+        self.setWindowIcon(QIcon(icon_path))
         self.showFullScreen()
 
         btn = QPushButton('메인 화면', self)
