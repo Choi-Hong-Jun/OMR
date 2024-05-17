@@ -1,3 +1,4 @@
+import sys
 import os
 import json
 from PyQt5.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QHBoxLayout,
@@ -8,6 +9,14 @@ from PyQt5.QtCore import Qt
 import webbrowser
 import math
 
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 class SendReportWidget(QWidget):  # 성적표 인쇄 화면
 
     def __init__(self):
@@ -17,7 +26,8 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
 
     def initUI(self):
         self.setWindowTitle('성적표 인쇄 화면')
-        self.setWindowIcon(QIcon('logo.jpeg'))
+        icon_path = resource_path('gr.jpg')
+        self.setWindowIcon(QIcon(icon_path))
         self.showFullScreen()
 
         btn = QPushButton('메인 화면', self)
@@ -180,6 +190,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                 table_item_text = self.table_widget.item(index.row(), 1).text()
                 score_value = self.table_widget.item(index.row(), 6).data(Qt.DisplayRole)
                 num_sides = max(0, self.table_widget.columnCount() - 7)
+                icon_path = resource_path('gr.jpg')
 
                 polygon_points = []
                 for i in range(num_sides):
@@ -222,7 +233,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                             </style>
                         </head>
                         <body style='background-color:white;'>
-                            <img src="logo.jpeg" alt="로고" class="logo">
+                            <img src="{icon_path}" alt="로고" class="logo">
                             <div class="content">
                                 <p>반명 : {combo_box_text}<br> 이름 : {table_item_text}<br> 총점: {score_value}</p>
                                 <svg width="500" height="500" x="500" y="100">
