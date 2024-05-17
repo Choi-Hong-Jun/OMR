@@ -1,4 +1,5 @@
 import sys
+import os
 from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton, QVBoxLayout, QLabel)
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import Qt
@@ -8,6 +9,13 @@ from grade import OMRGradingWidget
 from report import SendReportWidget
 
 
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 class MainWidget(QWidget):   # 메인 화면
 
     def __init__(self):
@@ -16,7 +24,8 @@ class MainWidget(QWidget):   # 메인 화면
 
     def initUI(self):
         self.setWindowTitle('OMR 스캐너')   # 화면 제목 적용
-        self.setWindowIcon(QIcon('logo.jpeg'))   # 국력발전소 로고 적용
+        icon_path = resource_path('gr.jpg')  # 리소스 경로 설정
+        self.setWindowIcon(QIcon(icon_path))   # 국력발전소 로고 적용
         self.showFullScreen()   # 전체 화면으로 설정
 
         btn = QPushButton('메인 화면', self)   # 버튼 생성
