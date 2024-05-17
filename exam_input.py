@@ -1,3 +1,4 @@
+import sys
 import os
 import json
 from PyQt5.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QListWidget,
@@ -5,6 +6,14 @@ from PyQt5.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLi
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import Qt
 
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 class ExamInputWidget(QWidget):   # 시험 입력 화면
 
     def __init__(self):
@@ -15,7 +24,8 @@ class ExamInputWidget(QWidget):   # 시험 입력 화면
 
     def initUI(self):
         self.setWindowTitle('시험 입력 화면')
-        self.setWindowIcon(QIcon('logo.jpeg'))
+        icon_path = resource_path('gr.jpg')
+        self.setWindowIcon(QIcon(icon_path))
         self.showFullScreen()
 
         btn = QPushButton('메인 화면', self)
@@ -136,7 +146,7 @@ class ExamInputWidget(QWidget):   # 시험 입력 화면
             self.line_edit.deleteLater()
 
         self.line_edit = QLineEdit(self)
-        self.line_edit.setGeometry(770, 150, 50, 30)
+        self.line_edit.setGeometry(810, 150, 50, 30)
         self.line_edit.show()
         self.line_edit.setFocus()
         self.line_edit.textChanged.connect(self.updateTableRow)
