@@ -121,7 +121,7 @@ class OMRReader:
 
         if not choices and not self.first_colored:
             for i, d in enumerate(rawdat):
-                if d < (self.first_colored + 5):
+                if self.first_colored and d < (self.first_colored + 5):
                     choices.append(_map[i])
 
         mindat_char = _map[rawdat.index(np.min(rawdat))]
@@ -183,6 +183,7 @@ class OMRReader:
         if self.item_name:
             file_name = f"{self.item_name}_table_data.json"
             if os.path.exists(file_name):
+                print(f'read {file_name}')
                 with open(file_name, "r", encoding='utf-8') as json_file:
                     data = json.load(json_file)
 
@@ -191,7 +192,10 @@ class OMRReader:
                     elif isinstance(data, dict) and "num_questions" in data:
                         num_questions = data["num_questions"]
                     else:
+                        print(f'# data type is not expected, {file_name}: {type(data)} / {data}')
                         return
+            else:
+                print(f'no such file: {file_name}')
 
         else:
             print('## No Item Name, Quit')
@@ -200,8 +204,8 @@ class OMRReader:
         desired_coordinates_count = int(num_questions)
         threshold = 225
         for question_idx, coordinates in enumerate(user_coordinates):
-            if question_idx >= desired_coordinates_count:
-                break
+            # if question_idx >= desired_coordinates_count:
+            #     break
 
             x, y, w, h = coordinates
             question_img = gray[y:y + h, x:x + w]
