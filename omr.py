@@ -52,7 +52,7 @@ class MainWidget(QWidget):   # 메인 화면
         self.notice_label.setWordWrap(True)
         self.notice_label.setStyleSheet(
             "QLabel {"
-            "border: 2px solid black;"
+            "border: 1px solid black;"
             "border-radius: 10px;"
             "padding: 10px;" 
             "background-color: #ffffff;"
