@@ -131,7 +131,7 @@ class ExamInputWidget(QWidget):   # 시험 입력 화면
             self.label_before_line_edit.deleteLater()
 
         self.label_before_line_edit = QLabel("문항수:", self)
-        self.label_before_line_edit.setGeometry(700, 150, 100, 30)
+        self.label_before_line_edit.setGeometry(800, 150, 100, 30)
         self.label_before_line_edit.setFont(font)
         self.label_before_line_edit.show()
 
@@ -146,7 +146,7 @@ class ExamInputWidget(QWidget):   # 시험 입력 화면
             self.line_edit.deleteLater()
 
         self.line_edit = QLineEdit(self)
-        self.line_edit.setGeometry(810, 150, 50, 30)
+        self.line_edit.setGeometry(910, 150, 50, 30)
         self.line_edit.show()
         self.line_edit.setFocus()
         self.line_edit.textChanged.connect(self.updateTableRow)
