@@ -264,6 +264,13 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                     margin-bottom: 20px;
                                     border-bottom: 2px solid #ccc;
                                 }}
+                                h1 {{
+                                    margin-bottom: 3px;
+                                }}
+                                .special {{
+                                    border-bottom: 4px solid red;
+                                    margin-bottom: -2px;
+                                }}
                             </style>
                             <script>
                                 function insertExamDate() {{
@@ -277,7 +284,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                         </head>
                         <body onload="insertExamDate()">
                             <div class="header">
-                                <h1>{combo_box_text}</h1>
+                                <h1 class="special">{combo_box_text}</h1>
                                 <h1>주식회사 국력발전소</h1>
                             </div>
 
