@@ -188,58 +188,135 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                 file_path = f"print_page_{i}.html"
                 combo_box_text = self.cb.currentText()
                 table_item_text = self.table_widget.item(index.row(), 1).text()
+                student_code = self.table_widget.item(index.row(), 2).data(Qt.DisplayRole)
+                class_name = self.table_widget.item(index.row(), 3).data(Qt.DisplayRole)
                 score_value = self.table_widget.item(index.row(), 6).data(Qt.DisplayRole)
-                num_sides = max(0, self.table_widget.columnCount() - 7)
-                icon_path = resource_path('gr.jpg')
 
-                polygon_points = []
-                for i in range(num_sides):
-                    angle = 2 * math.pi * i / num_sides
-                    x = 250 + 40 * math.cos(angle)
-                    y = 40 + 40 * math.sin(angle)
-                    polygon_points.append(f"{x},{y}")
+                score_values = []
+                for row in range(self.table_widget.rowCount()):
+                    value = self.table_widget.item(row, 6).data(Qt.DisplayRole)
+                    if value is not None:
+                        score_values.append(float(value))
+                avg_score = sum(score_values) / len(score_values) if score_values else 0
+
+                file_name = f"{combo_box_text}_table_score.json"
+                with open(file_name, "r", encoding="utf-8") as json_file:
+                    json_data = json.load(json_file)
+                    timestamp = json_data.get("timestamp", "")
 
                 with open(file_path, "w", encoding="utf-8") as file:
-                    title = f"{combo_box_text} - {table_item_text}"
                     file.write(
                         f"""
                         <!DOCTYPE html>
                         <html>
                         <head>
                             <meta charset='utf-8'>
-                            <title>{title}</title>
+                            <title>모의고사 Report</title>
                             <style>
                                 @page {{
                                     size: A4;
-                                    margin: 1;
+                                    margin: 0; /* 페이지 여백 제거 */
+                                    border: 2px solid black;
                                 }}
-                                body {{
-                                    margin: 1;
-                                    font-family: sans-serif;
+                                body {{ 
+                                    font-family: Arial, sans-serif; 
                                 }}
-                                .logo {{
+                                table {{ 
+                                    width: 100%; 
+                                    border-collapse: collapse; 
+                                    margin: 20px 0;
+                                }}
+                                th, td {{ 
+                                    border: 1px solid #ccc; 
+                                    padding: 8px; 
+                                    text-align: center; 
+                                }}
+                                th {{
+                                    background-color: #f4f4f4; 
+                                }}
+                                h2 {{ 
+                                    text-align: left; 
+                                    margin-left: 10px;
+                                    font-weight: normal;
+                                     position: relative;
+                                }}
+                                h2::before {{
+                                    content: "|";
+                                    color: orange;
+                                    font-weight: bold;
                                     position: absolute;
-                                    top: 10px;
-                                    left: 10px;
-                                    max-width: 100px;
-                                    max-height: 100px;
+                                    left: -10px;
                                 }}
                                 .content {{
-                                    position: relative;
-                                    margin-top: 100px;
-                                    margin-left: 10px;
-                                    font-family: sans-serif;
+                                    margin-top: 20px;
+                                    text-align: center;
+                                }}
+                                .header {{
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                    margin: 0 20px;
+                                    margin-bottom: 20px;
+                                    border-bottom: 2px solid #ccc;
                                 }}
                             </style>
+                            <script>
+                                function insertExamDate() {{
+                                    var today = new Date("{timestamp}");
+                                    var dateString = today.getFullYear() + '-' +
+                                                     ('0' + (today.getMonth() + 1)).slice(-2) + '-' +
+                                                     ('0' + today.getDate()).slice(-2);
+                                    document.getElementById('todayDate').innerText = dateString;
+                                }}
+                            </script>
                         </head>
-                        <body style='background-color:white;'>
-                            <img src="{icon_path}" alt="로고" class="logo">
-                            <div class="content">
-                                <p>반명 : {combo_box_text}<br> 이름 : {table_item_text}<br> 총점: {score_value}</p>
-                                <svg width="500" height="500" x="500" y="100">
-                                    <polygon points="{', '.join(polygon_points)}" fill="white" stroke="black" />
-                                </svg>
+                        <body onload="insertExamDate()">
+                            <div class="header">
+                                <h1>{combo_box_text}</h1>
+                                <h1>주식회사 국력발전소</h1>
                             </div>
+
+                            <h2>학생 정보</h2>
+                            <table>
+                                <tr>
+                                    <th>성명</th>
+                                    <th>학급명</th>
+                                    <th>학번</th>
+                                    <th>시험일</th>
+                                    <th>내 점수/만점</th>
+                                    <th>평균</th>
+                                </tr>
+                                <tr>
+                                    <td>{table_item_text}</td>
+                                    <td>{class_name}</td>
+                                    <td>{student_code}</td>
+                                    <td id="todayDate"></td>
+                                    <td>{score_value} / 100</td>
+                                    <td>{avg_score:.1f}</td>
+                                </tr>
+                            </table>
+
+                            <h2>영역분류별 성취도 분석</h2>
+                            <table>
+                                <tr>
+                                    <th>영역분류</th>
+                                    <th>배점</th>
+                                    <th>득점</th>
+                                    <th>성취도%</th>
+                                    <th>평균</th>
+                                </tr>
+                            </table>
+
+                            <h2>문항 채점표</h2>
+                            <table>
+                                <tr>
+                                    <th>문항</th>
+                                    <th>배점</th>
+                                    <th>정답</th>
+                                    <th>학생답안</th>
+                                    <th>정답률%</th>
+                                </tr> 
+                            </table>  
                         </body>
                         </html>
                     """)
