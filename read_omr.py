@@ -18,6 +18,7 @@ class OMRReader:
         self.pdf_document = fitz.open(self.pdf_filename)
         self.nr_pages = len(self.pdf_document)
         self.all_img_path = list()
+        self.alldat = list()
         self.raw_answer = {
             'f_pdf' : self.pdf_filename,
             'f_png' : list(),
@@ -67,7 +68,7 @@ class OMRReader:
 
     def extract_name(self, img, gray):   # omr 이름 표에 삽입
         fullname = list()
-        self.first_colored = None
+        self.colored = list()
 
         fullname.append(self.extract_each_name(img, gray, [
             ((183, 277, 17, 200), self.map_kor['jamo1'], 210),
@@ -133,36 +134,86 @@ class OMRReader:
             start_y = int(h * i / len(_map))
             end_y = int(h * (i + 1) / len(_map))
             choice_img = question_img[start_y:end_y, :]
-            avg_pixel_value = round(np.mean(choice_img), 2)
+            avg_pixel_value = int(np.mean(choice_img))
 
             rawdat.append(avg_pixel_value)
-
+            
+        # store all values for debugging
         self.raw_answer['name']['raw'].append(rawdat)
+
+        mean_colored = 0
+        margin = 30
+        if self.colored:
+            mean_colored = int(np.mean(self.colored)) + margin
+
+        # Solution 1) pick colored one with Threshold
+        # ret = self.select_filled_loc(rawdat, threshold, mean_colored)
+        # chosen = self.get_chosen_char(ret, _type)
+
+        # Solution 2) pick from min-max scaling values
+        ret = self.select_filled_loc_without_threshold(rawdat, mean_colored)
+        chosen = self.get_chosen_char2(ret, _type)
+
+        if chosen != None:
+            # print(f'* {_map[chosen]} {rawdat[chosen]} / [{threshold},{mean_colored:3}] {rawdat} / {ret}')
+            self.colored.append(rawdat[chosen])
+            return _map[chosen]
+
+        # print(f'#        / [{threshold},{mean_colored:3}] {rawdat} / {ret}')
+
+    def select_filled_loc(self, rawdat, threshold, threshold2=None):
         # how to distinguish efficiently? normalization ?
         # normdat = [round(float(i)/sum(rawdat)*100, 2) for i in rawdat]
-        choices = list()
+        under_1 = list()
+        under_2 = list()
         for i, d in enumerate(rawdat):
             if d < threshold:
-                if not self.first_colored:
-                    self.first_colored = rawdat[i]
+                under_1.append(i)
+            if threshold2 and d < threshold2:
+                under_2.append(i)
 
-                choices.append(_map[i])
+        return {
+            'index_min' : rawdat.index(np.min(rawdat)),
+            'index_under_threshold' : under_1,
+            'index_under_threshold2' : under_2,
+        }
 
-        if not choices and not self.first_colored:
-            for i, d in enumerate(rawdat):
-                if self.first_colored and d < (self.first_colored + 5):
-                    choices.append(_map[i])
+    def get_chosen_char(self, dat, _type):
+        chosen = None
+        if len(dat['index_under_threshold']) == 1:
+            chosen = dat['index_under_threshold'][0]
+        elif dat['index_min'] in dat['index_under_threshold'] or\
+             dat['index_min'] in dat['index_under_threshold2']:
+            chosen = dat['index_min']
+        elif (not dat['index_under_threshold'] and not dat['index_under_threshold2']) and\
+             _type in ['cho', 'jung']:
+            chosen = dat['index_min']
 
-        mindat_char = _map[rawdat.index(np.min(rawdat))]
+        return chosen
 
-        # debugging log for each value
-        # print(f'* {choices} / {_map[rawdat.index(np.min(rawdat))]} {np.min(rawdat)} / [{threshold},{self.first_colored}] {rawdat}')
-        if len(choices) == 1:
-            return ''.join(choices)
-        elif mindat_char in choices:
-            return mindat_char
-        elif not choices and _type in ['cho', 'jung']:
-            return mindat_char
+    def get_minmax_scaled(self, target):
+        return [(x- np.min(target)) / (np.max(target) - np.min(target)) for x in target]
+
+    def select_filled_loc_without_threshold(self, rawdat, prev_mean=None):
+        mm = self.get_minmax_scaled(rawdat)
+        mean_mm = np.mean(mm)
+        min2 = sorted(mm)[1]
+
+        # print(mm, round(mean_mm,2), min2)
+        # TODO: 0.6 and 0.3 are heuristics, need to get more cases
+        if mean_mm > 0.6 or min2 > 0.3:
+            _index = mm.index(0)
+            # TODO: this format for threshold method to get colored
+            return {
+                'index_min' : _index,
+                'index_under' : [_index],
+            }
+        else:
+            return {'index_min':None, 'index_under':None}
+
+    def get_chosen_char2(self, dat, _type):
+        # TODO: already decided in select_filled_loc_without_threshold
+        return dat['index_min']
 
     def extract_number(self, img, gray):   # omr 학번 표에 삽입
         omr_numbers = []
@@ -172,24 +223,28 @@ class OMRReader:
             (127, 270, 11, 245),
             (142, 270, 11, 245)
         ]
-        threshold = 210
+        # threshold = 210
 
         for coordinates in user_coordinates:
             x, y, w, h = coordinates
             question_img = gray[y:y + h, x:x + w]
 
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            choices = []
+            # choices = []
+            rawdat = list()
             for i in range(10):
                 start_y = int(h * i / 10)
                 end_y = int(h * (i + 1) / 10)
                 choice_img = question_img[start_y:end_y, :]
-                avg_pixel_value = np.mean(choice_img)
+                avg_pixel_value = int(np.mean(choice_img))
+                rawdat.append(avg_pixel_value)
 
-                if avg_pixel_value < threshold:
-                    choices.append(i)
+                # if avg_pixel_value < threshold:
+                #     choices.append(i)
 
-            omr_numbers.append(choices)
+            # omr_numbers.append(choices)
+            ret = self.select_filled_loc_without_threshold(rawdat, None)
+            omr_numbers.append([ret['index_min']])
 
         return int(''.join(str(num[0]) if num else '0' for num in omr_numbers))
 
@@ -227,7 +282,7 @@ class OMRReader:
                 print(f'no such file: {file_name}')
 
         desired_coordinates_count = int(num_questions)
-        threshold = 225
+        # threshold = 225
         for question_idx, coordinates in enumerate(user_coordinates):
             # if question_idx >= desired_coordinates_count:
             #     break
@@ -235,17 +290,24 @@ class OMRReader:
             x, y, w, h = coordinates
             question_img = gray[y:y + h, x:x + w]
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            choices = []
+            # choices = []
+            rawdat = list()
             for j in range(5):
                 start_x = int(w * j / 5)
                 end_x = int(w * (j + 1) / 5)
                 choice_img = question_img[:, start_x:end_x]
-                avg_pixel_value = np.mean(choice_img)
+                avg_pixel_value = int(np.mean(choice_img))
+                rawdat.append(avg_pixel_value)
 
-                if avg_pixel_value < threshold:
-                    choices.append(str(j + 1))
+            #     if avg_pixel_value < threshold:
+            #         choices.append(str(j + 1))
 
-            omr_answers.append(choices)
+            # omr_answers.append(choices)
+            ret = self.select_filled_loc_without_threshold(rawdat, None)
+            if ret['index_min']:
+                omr_answers.append([str(ret['index_min'] + 1)])
+            else:
+                omr_answers.append([])
 
         return omr_answers
     
@@ -271,4 +333,7 @@ if __name__ == '__main__':
         _num = o.extract_number(img, gray_img)
         _ans = o.extract_omr(img, gray_img)
 
-        print(f'{f}: {_name} / {_num} / {_ans}')
+        print(f'{f}: {_name} / {_num:04} / {_ans}')
+
+    with open('alldata.json', 'w') as f:
+        json.dump(o.alldat, f, indent=4)
