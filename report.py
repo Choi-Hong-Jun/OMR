@@ -278,7 +278,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                     var dateString = today.getFullYear() + '-' +
                                                      ('0' + (today.getMonth() + 1)).slice(-2) + '-' +
                                                      ('0' + today.getDate()).slice(-2);
-                                    document.getElementById('todayDate').innerText = dateString;
+                                    document.getElementById('examDate').innerText = dateString;
                                 }}
                             </script>
                         </head>
@@ -302,7 +302,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                     <td>{table_item_text}</td>
                                     <td>{class_name}</td>
                                     <td>{student_code}</td>
-                                    <td id="todayDate"></td>
+                                    <td id="examDate"></td>
                                     <td>{score_value} / {total_score}</td>
                                     <td>{avg_score:.1f}</td>
                                 </tr>
