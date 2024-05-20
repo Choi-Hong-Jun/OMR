@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QFileDialog, QTa
                              QLabel, QLineEdit, QTableWidgetItem, QComboBox, QStackedWidget)
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import Qt
+from datetime import datetime
 
 
 def resource_path(relative_path):
@@ -890,7 +891,8 @@ class OMRGradingWidget(QWidget):  # OMR 채점 화면
 
     def saveScore(self):  # 표의 값들 저장
         new_table_data = {
-            "score": []
+            "score": [],
+            "timestamp": datetime.now().isoformat()
         }
         for row in range(self.table_widget.rowCount()):
             row_data = {}
@@ -907,6 +909,7 @@ class OMRGradingWidget(QWidget):  # OMR 채점 화면
             with open(file_name, "r", encoding="utf-8") as json_file:
                 existing_data = json.load(json_file)
                 existing_data["score"].extend(new_table_data["score"])
+                existing_data["timestamp"] = datetime.now().isoformat()
             table_data = existing_data
         else:
             table_data = new_table_data
