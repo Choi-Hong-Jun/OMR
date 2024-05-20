@@ -19,7 +19,7 @@ class TestOMRReader(unittest.TestCase):
         all_result = list()
         for each in all_pdf:
             print(f'# handle: {each}')
-            o = OMRReader(each, 'none', 'none')
+            o = OMRReader(each, None, None)
             o.convert_pdf_to_png()
             for f in o.all_img_path:
                 img, gray_img = o.read_img_with_cv_as_gray(f)

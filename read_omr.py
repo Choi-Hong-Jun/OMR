@@ -10,12 +10,30 @@ class OMRReader:
         assert os.path.exists(f_pdf), f'no such file {f_pdf}'
 
         self.pdf_filename = f_pdf
+
+        # if both class_name and item_name are None, it is in unittest
         self.class_name = class_name
         self.item_name = item_name
 
         self.pdf_document = fitz.open(self.pdf_filename)
         self.nr_pages = len(self.pdf_document)
         self.all_img_path = list()
+        self.raw_answer = {
+            'f_pdf' : self.pdf_filename,
+            'f_png' : list(),
+            'name' : {
+                'raw' : list(),
+                'colored' : list(),
+            },
+            'number' : {
+                'raw' : list(),
+                'colored' : list(),
+            },
+            'answer' : {
+                'raw' : list(),
+                'colored' : list(),
+            },
+        }
 
         with open('korean_data.json', encoding='utf-8') as f:
             self.map_kor = json.load(f)
@@ -24,7 +42,17 @@ class OMRReader:
         for page_number in range(len(self.pdf_document)):
             page = self.pdf_document.load_page(page_number)
             pix = page.get_pixmap()
-            img_path = f"{self.item_name}_{self.class_name}_page{page_number + 1}.png"
+
+            if self.item_name and self.class_name:
+                img_path = f"{self.item_name}_{self.class_name}_page{page_number + 1}.png"
+            else:
+                dir_img = os.path.dirname(self.pdf_filename)
+                pdf_name = os.path.basename(self.pdf_filename)
+                pdf_name = os.path.splitext(pdf_name)[0]
+                img_name = f"{pdf_name}_P{page_number + 1}.png"
+                img_path = os.path.join(dir_img, img_name)
+
+            self.raw_answer['f_png'].append(img_path)
             pix.save(img_path)
 
             self.all_img_path.append(img_path)
@@ -109,6 +137,7 @@ class OMRReader:
 
             rawdat.append(avg_pixel_value)
 
+        self.raw_answer['name']['raw'].append(rawdat)
         # how to distinguish efficiently? normalization ?
         # normdat = [round(float(i)/sum(rawdat)*100, 2) for i in rawdat]
         choices = list()
@@ -196,10 +225,6 @@ class OMRReader:
                         return
             else:
                 print(f'no such file: {file_name}')
-
-        else:
-            print('## No Item Name, Quit')
-            return
 
         desired_coordinates_count = int(num_questions)
         threshold = 225
