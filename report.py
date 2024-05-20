@@ -277,11 +277,6 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
         self.exam_input_widget = OMRGradingWidget()
         self.hide()
 
-    def showSendReportWidget(self):
-        from report import SendReportWidget
-        self.exam_input_widget = SendReportWidget()
-        self.hide()
-
     def showExamInputWidget(self):
         from exam_input import ExamInputWidget
         self.exam_input_widget = ExamInputWidget()
