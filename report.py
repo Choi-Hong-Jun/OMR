@@ -204,6 +204,11 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                     json_data = json.load(json_file)
                     timestamp = json_data.get("timestamp", "")
 
+                file_name = f"{combo_box_text}_table_data.json"
+                with open(file_name, "r", encoding="utf-8") as json_file:
+                    json_data = json.load(json_file)
+                    total_score = json_data.get("total_score", 0)
+
                 with open(file_path, "w", encoding="utf-8") as file:
                     file.write(
                         f"""
@@ -291,7 +296,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                     <td>{class_name}</td>
                                     <td>{student_code}</td>
                                     <td id="todayDate"></td>
-                                    <td>{score_value} / 100</td>
+                                    <td>{score_value} / {total_score}</td>
                                     <td>{avg_score:.1f}</td>
                                 </tr>
                             </table>
