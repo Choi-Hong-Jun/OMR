@@ -6,10 +6,28 @@ import numpy as np
 
 
 class OMRReader:
+    raw_data_base = {
+        'f_png' : None,
+        'name' : {
+            'raw' : list(),
+            'colored' : list(),
+        },
+        'number' : {
+            'raw' : list(),
+            'colored' : list(),
+        },
+        'answer' : {
+            'raw' : list(),
+            'colored' : list(),
+        },
+    }
+
     def __init__(self, f_pdf, class_name, item_name) -> None:
         assert os.path.exists(f_pdf), f'no such file {f_pdf}'
 
         self.pdf_filename = f_pdf
+
+        # if both class_name and item_name are None, it is in unittest
         self.class_name = class_name
         self.item_name = item_name
 
@@ -17,6 +35,11 @@ class OMRReader:
         self.nr_pages = len(self.pdf_document)
         self.all_img_path = list()
         self.alldat = list()
+        self.raw_answer = {
+            'f_pdf' : self.pdf_filename,
+            'data' : list(),
+        }
+        self.this_raw_answer = self.raw_data_base.copy()
 
         with open('korean_data.json', encoding='utf-8') as f:
             self.map_kor = json.load(f)
@@ -25,18 +48,33 @@ class OMRReader:
         for page_number in range(len(self.pdf_document)):
             page = self.pdf_document.load_page(page_number)
             pix = page.get_pixmap()
-            img_path = f"{self.item_name}_{self.class_name}_page{page_number + 1}.png"
+
+            if self.item_name and self.class_name:
+                img_path = f"{self.item_name}_{self.class_name}_page{page_number + 1}.png"
+            else:
+                dir_img = os.path.dirname(self.pdf_filename)
+                pdf_name = os.path.basename(self.pdf_filename)
+                pdf_name = os.path.splitext(pdf_name)[0]
+                img_name = f"{pdf_name}_P{page_number + 1}.png"
+                img_path = os.path.join(dir_img, img_name)
+
             pix.save(img_path)
 
             self.all_img_path.append(img_path)
             # self.extract_data(img_path)
 
     def extract_data(self, img_path):
+        import copy
+        self.this_raw_answer = copy.deepcopy(self.raw_data_base)
+        self.this_raw_answer['f_png'] = img_path
+
         img, gray = self.read_img_with_cv_as_gray(img_path)
 
         _name = self.extract_name(img, gray)
         _number = self.extract_number(img, gray)
         _answer = self.extract_omr(img, gray)
+
+        self.raw_answer['data'].append(self.this_raw_answer)
 
     def extract_name(self, img, gray):   # omr 이름 표에 삽입
         fullname = list()
@@ -109,9 +147,9 @@ class OMRReader:
             avg_pixel_value = int(np.mean(choice_img))
 
             rawdat.append(avg_pixel_value)
-
+            
         # store all values for debugging
-        self.alldat.append(rawdat)
+        self.this_raw_answer['name']['raw'].append(rawdat)
 
         mean_colored = 0
         margin = 30
@@ -125,6 +163,7 @@ class OMRReader:
         # Solution 2) pick from min-max scaling values
         ret = self.select_filled_loc_without_threshold(rawdat, mean_colored)
         chosen = self.get_chosen_char2(ret, _type)
+        self.this_raw_answer['name']['colored'].append(chosen)
 
         if chosen != None:
             # print(f'* {_map[chosen]} {rawdat[chosen]} / [{threshold},{mean_colored:3}] {rawdat} / {ret}')
@@ -214,9 +253,16 @@ class OMRReader:
                 # if avg_pixel_value < threshold:
                 #     choices.append(i)
 
+            # store all values for debugging
+            self.this_raw_answer['number']['raw'].append(rawdat)
+
             # omr_numbers.append(choices)
             ret = self.select_filled_loc_without_threshold(rawdat, None)
-            omr_numbers.append([ret['index_min']])
+            self.this_raw_answer['number']['colored'].append(ret['index_min'])
+            if ret['index_min']:
+                omr_numbers.append([str(ret['index_min'] + 1)])
+            else:
+                omr_numbers.append([])
 
         return int(''.join(str(num[0]) if num else '0' for num in omr_numbers))
 
@@ -253,10 +299,6 @@ class OMRReader:
             else:
                 print(f'no such file: {file_name}')
 
-        else:
-            print('## No Item Name, Quit')
-            return
-
         desired_coordinates_count = int(num_questions)
         # threshold = 225
         for question_idx, coordinates in enumerate(user_coordinates):
@@ -278,8 +320,11 @@ class OMRReader:
             #     if avg_pixel_value < threshold:
             #         choices.append(str(j + 1))
 
+            self.this_raw_answer['answer']['raw'].append(rawdat)
+
             # omr_answers.append(choices)
             ret = self.select_filled_loc_without_threshold(rawdat, None)
+            self.this_raw_answer['answer']['colored'].append(ret['index_min'])
             if ret['index_min']:
                 omr_answers.append([str(ret['index_min'] + 1)])
             else:

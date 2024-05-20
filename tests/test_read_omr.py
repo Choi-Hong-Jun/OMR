@@ -19,21 +19,12 @@ class TestOMRReader(unittest.TestCase):
         all_result = list()
         for each in all_pdf:
             print(f'# handle: {each}')
-            o = OMRReader(each, 'none', 'none')
+            o = OMRReader(each, None, None)
             o.convert_pdf_to_png()
             for f in o.all_img_path:
-                img, gray_img = o.read_img_with_cv_as_gray(f)
+                o.extract_data(f)
 
-                _name = o.extract_name(img, gray_img)
-                _num = o.extract_number(img, gray_img)
-                _ans = o.extract_omr(img, gray_img)
-
-                all_result.append({
-                    'filepath' : each,
-                    'name' : _name,
-                    'num' : _num,
-                    'answer' : _ans,
-                })
+            all_result.append(o.raw_answer)
             # break
 
         with open('result.json', 'w') as f:
