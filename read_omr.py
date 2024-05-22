@@ -135,18 +135,7 @@ class OMRReader:
             return ''
 
     def _extract_name(self, img, gray, user_coordinates, _map, threshold, _type):
-        x, y, w, h = user_coordinates
-        question_img = gray[y:y + h, x:x + w]
-        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-        rawdat = list()
-        for i in range(len(_map)):
-            start_y = int(h * i / len(_map))
-            end_y = int(h * (i + 1) / len(_map))
-            choice_img = question_img[start_y:end_y, :]
-            avg_pixel_value = int(np.mean(choice_img))
-
-            rawdat.append(avg_pixel_value)
+        rawdat = self.get_raw_data(user_coordinates, img, gray, len(_map))
             
         # store all values for debugging
         self.this_raw_answer['name']['raw'].append(rawdat)
@@ -172,6 +161,27 @@ class OMRReader:
 
         # print(f'#        / [{threshold},{mean_colored:3}] {rawdat} / {ret}')
 
+    def get_raw_data(self, coordinates, img, gray, nr_iter, move='down'):
+        x, y, w, h = coordinates
+        question_img = gray[y:y + h, x:x + w]
+        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        rawdat = list()
+        for i in range(nr_iter):
+            if move == 'down':
+                start_offset = int(h * i / nr_iter)
+                end_offset = int(h * (i + 1) / nr_iter)
+                choice_img = question_img[start_offset:end_offset, :]
+            else:
+                start_offset = int(w * i / nr_iter)
+                end_offset = int(w * (i + 1) / nr_iter)
+                choice_img = question_img[:, start_offset:end_offset]
+
+            avg_pixel_value = int(np.mean(choice_img))
+            rawdat.append(avg_pixel_value)
+
+        return rawdat
+  
     def select_filled_loc(self, rawdat, threshold, threshold2=None):
         # how to distinguish efficiently? normalization ?
         # normdat = [round(float(i)/sum(rawdat)*100, 2) for i in rawdat]
@@ -237,26 +247,11 @@ class OMRReader:
         # threshold = 210
 
         for coordinates in user_coordinates:
-            x, y, w, h = coordinates
-            question_img = gray[y:y + h, x:x + w]
-
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            # choices = []
-            rawdat = list()
-            for i in range(10):
-                start_y = int(h * i / 10)
-                end_y = int(h * (i + 1) / 10)
-                choice_img = question_img[start_y:end_y, :]
-                avg_pixel_value = int(np.mean(choice_img))
-                rawdat.append(avg_pixel_value)
-
-                # if avg_pixel_value < threshold:
-                #     choices.append(i)
+            rawdat = self.get_raw_data(coordinates, img, gray, 10)
 
             # store all values for debugging
             self.this_raw_answer['number']['raw'].append(rawdat)
 
-            # omr_numbers.append(choices)
             ret = self.select_filled_loc_without_threshold(rawdat, None)
             self.this_raw_answer['number']['colored'].append(ret['index_min'])
             if ret['index_min']:
@@ -305,24 +300,9 @@ class OMRReader:
             # if question_idx >= desired_coordinates_count:
             #     break
 
-            x, y, w, h = coordinates
-            question_img = gray[y:y + h, x:x + w]
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            # choices = []
-            rawdat = list()
-            for j in range(5):
-                start_x = int(w * j / 5)
-                end_x = int(w * (j + 1) / 5)
-                choice_img = question_img[:, start_x:end_x]
-                avg_pixel_value = int(np.mean(choice_img))
-                rawdat.append(avg_pixel_value)
-
-            #     if avg_pixel_value < threshold:
-            #         choices.append(str(j + 1))
-
+            rawdat = self.get_raw_data(coordinates, img, gray, 5, 'left')
             self.this_raw_answer['answer']['raw'].append(rawdat)
 
-            # omr_answers.append(choices)
             ret = self.select_filled_loc_without_threshold(rawdat, None)
             self.this_raw_answer['answer']['colored'].append(ret['index_min'])
             if ret['index_min']:
