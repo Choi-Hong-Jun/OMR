@@ -17,7 +17,8 @@ class TestOMRReader(unittest.TestCase):
                 all_pdf.append(os.path.join(dir_samples, each))
 
         all_result = list()
-        for each in all_pdf:
+        th = 5
+        for index, each in enumerate(all_pdf):
             print(f'# handle: {each}')
             o = OMRReader(each, None, None)
             o.convert_pdf_to_png()
@@ -25,7 +26,15 @@ class TestOMRReader(unittest.TestCase):
                 o.extract_data(f)
 
             all_result.append(o.raw_answer)
-            # break
+
+            if th < index:
+                break
 
         with open('result.json', 'w') as f:
             json.dump(all_result, f, indent=4)
+
+        with open('result_orig.json') as f:
+            all_result_orig = json.load(f)
+
+        self.assertEqual(all_result, all_result_orig)
+
