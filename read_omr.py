@@ -35,6 +35,14 @@ class OMRReader:
         self.nr_pages = len(self.pdf_document)
         self.all_img_path = list()
         self.alldat = list()
+
+        # set solution
+        # Solution 1) pick colored one with Threshold
+        # chosen = self.get_colored_with_threshold(rawdat, {'threshold':threshold, 'mean_colored':mean_colored, 'type':_type, 'post_process':self.get_chosen_char})
+        # Solution 2) pick from min-max scaling values
+        # chosen = self.pick_colored(rawdat, None)
+        self.pick_colored = self.get_colored
+
         self.raw_answer = {
             'f_pdf' : self.pdf_filename,
             'data' : list(),
@@ -61,7 +69,6 @@ class OMRReader:
             pix.save(img_path)
 
             self.all_img_path.append(img_path)
-            # self.extract_data(img_path)
 
     def extract_data(self, img_path):
         import copy
@@ -70,9 +77,9 @@ class OMRReader:
 
         img, gray = self.read_img_with_cv_as_gray(img_path)
 
-        _name = self.extract_name(img, gray)
-        _number = self.extract_number(img, gray)
-        _answer = self.extract_omr(img, gray)
+        self.extract_name(img, gray)
+        self.extract_number(img, gray)
+        self.extract_omr(img, gray)
 
         self.raw_answer['data'].append(self.this_raw_answer)
 
@@ -145,13 +152,7 @@ class OMRReader:
         if self.colored:
             mean_colored = int(np.mean(self.colored)) + margin
 
-        # Solution 1) pick colored one with Threshold
-        # ret = self.select_filled_loc(rawdat, threshold, mean_colored)
-        # chosen = self.get_chosen_char(ret, _type)
-
-        # Solution 2) pick from min-max scaling values
-        ret = self.select_filled_loc_without_threshold(rawdat, mean_colored)
-        chosen = self.get_chosen_char2(ret, _type)
+        chosen = self.pick_colored(rawdat, {'threshold':threshold, 'mean_colored':mean_colored, 'type':_type})
         self.this_raw_answer['name']['colored'].append(chosen)
 
         if chosen != None:
@@ -181,10 +182,16 @@ class OMRReader:
             rawdat.append(avg_pixel_value)
 
         return rawdat
+
+    def get_colored_with_threshold(self, rawdat, extra):
+        ret = self.select_filled_loc(rawdat, extra['threshold'], extra['mean_colored'])
+        chosen = extra['post_process'](ret, extra['type'])
+        return chosen
+
+    def get_colored(self, rawdat, extra):
+        return self.select_filled_loc_without_threshold(rawdat)
   
     def select_filled_loc(self, rawdat, threshold, threshold2=None):
-        # how to distinguish efficiently? normalization ?
-        # normdat = [round(float(i)/sum(rawdat)*100, 2) for i in rawdat]
         under_1 = list()
         under_2 = list()
         for i, d in enumerate(rawdat):
@@ -215,7 +222,9 @@ class OMRReader:
     def get_minmax_scaled(self, target):
         return [(x- np.min(target)) / (np.max(target) - np.min(target)) for x in target]
 
-    def select_filled_loc_without_threshold(self, rawdat, prev_mean=None):
+    def select_filled_loc_without_threshold(self, rawdat):
+        assert len(rawdat) >= 5, f'rawdat has least 5 values: {rawdat}'
+
         mm = self.get_minmax_scaled(rawdat)
         mean_mm = np.mean(mm)
         min2 = sorted(mm)[1]
@@ -223,18 +232,7 @@ class OMRReader:
         # print(mm, round(mean_mm,2), min2)
         # TODO: 0.6 and 0.3 are heuristics, need to get more cases
         if mean_mm > 0.6 or min2 > 0.3:
-            _index = mm.index(0)
-            # TODO: this format for threshold method to get colored
-            return {
-                'index_min' : _index,
-                'index_under' : [_index],
-            }
-        else:
-            return {'index_min':None, 'index_under':None}
-
-    def get_chosen_char2(self, dat, _type):
-        # TODO: already decided in select_filled_loc_without_threshold
-        return dat['index_min']
+            return mm.index(0)
 
     def extract_number(self, img, gray):   # omr 학번 표에 삽입
         omr_numbers = []
@@ -252,10 +250,10 @@ class OMRReader:
             # store all values for debugging
             self.this_raw_answer['number']['raw'].append(rawdat)
 
-            ret = self.select_filled_loc_without_threshold(rawdat, None)
-            self.this_raw_answer['number']['colored'].append(ret['index_min'])
-            if ret['index_min']:
-                omr_numbers.append([str(ret['index_min'] + 1)])
+            ret = self.pick_colored(rawdat, None)
+            self.this_raw_answer['number']['colored'].append(ret)
+            if ret:
+                omr_numbers.append([str(ret + 1)])
             else:
                 omr_numbers.append([])
 
@@ -303,10 +301,11 @@ class OMRReader:
             rawdat = self.get_raw_data(coordinates, img, gray, 5, 'left')
             self.this_raw_answer['answer']['raw'].append(rawdat)
 
-            ret = self.select_filled_loc_without_threshold(rawdat, None)
-            self.this_raw_answer['answer']['colored'].append(ret['index_min'])
-            if ret['index_min']:
-                omr_answers.append([str(ret['index_min'] + 1)])
+            ret = self.pick_colored(rawdat, None)
+            self.this_raw_answer['answer']['colored'].append(ret)
+
+            if ret:
+                omr_answers.append([str(ret + 1)])
             else:
                 omr_answers.append([])
 
