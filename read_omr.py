@@ -302,12 +302,13 @@ class OMRReader:
             self.this_raw_answer['answer']['raw'].append(rawdat)
 
             ret = self.pick_colored(rawdat, None)
-            self.this_raw_answer['answer']['colored'].append(ret)
 
             if ret:
                 omr_answers.append([str(ret + 1)])
+                self.this_raw_answer['answer']['colored'].append([ret + 1])
             else:
                 omr_answers.append([])
+                self.this_raw_answer['answer']['colored'].append([])
 
         return omr_answers
     
