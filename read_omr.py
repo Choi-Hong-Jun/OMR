@@ -265,7 +265,7 @@ class OMRReader:
             ret = self.pick_colored(rawdat, None)
             self.this_raw_answer['number']['colored'].append(ret)
             if ret != None:
-                omr_numbers.append([str(ret + 1)])
+                omr_numbers.append([str(ret)])
             else:
                 omr_numbers.append([])
 
