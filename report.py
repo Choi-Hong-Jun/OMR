@@ -209,18 +209,19 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                 with open(file_name, "r", encoding="utf-8") as json_file:
                     json_data = json.load(json_file)
                     total_score = json_data.get("total_score", 0)
+                    area_scores = json_data.get("area_scores", {})
 
                 performance_data = []
                 for col in range(7, self.table_widget.columnCount()):
                     category = self.table_widget.horizontalHeaderItem(col).text()
-                    points = self.table_widget.item(index.row(), col).data(Qt.DisplayRole)
-                    if points is not None:
-                        points = int(float(points))
+                    points = area_scores.get(category, 0)
+                    score = self.table_widget.item(index.row(), col).data(Qt.DisplayRole)
+                    if score is not None:
+                        score = int(float(score))
                     else:
-                        points = 0  # Default value if data is missing
-                    score = points  # Assume points and score are the same for this example
+                        score = 0
                     achievement = (score / points * 100) if points else 0
-                    average = avg_score  # Assume average score for simplicity
+                    average = avg_score
 
                     performance_data.append({
                         "category": category,
