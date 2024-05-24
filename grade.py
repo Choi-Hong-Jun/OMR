@@ -301,10 +301,9 @@ class OMRGradingWidget(QWidget):  # OMR 채점 화면
     def saveScore(self):  # 표의 값들 저장
         new_table_data = {
             "score": [],
-            "timestamp": datetime.now().isoformat()
         }
         for row in range(self.table_widget.rowCount()):
-            row_data = {}
+            row_data = {"timestamp": datetime.now().isoformat()}
             for column in range(self.table_widget.columnCount()):
                 item = self.table_widget.item(row, column)
                 header = self.table_widget.horizontalHeaderItem(column).text()
@@ -318,7 +317,6 @@ class OMRGradingWidget(QWidget):  # OMR 채점 화면
             with open(file_name, "r", encoding="utf-8") as json_file:
                 existing_data = json.load(json_file)
                 existing_data["score"].extend(new_table_data["score"])
-                existing_data["timestamp"] = datetime.now().isoformat()
             table_data = existing_data
         else:
             table_data = new_table_data
