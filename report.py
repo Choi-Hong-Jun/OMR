@@ -200,16 +200,12 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                         score_values.append(float(value))
                 avg_score = sum(score_values) / len(score_values) if score_values else 0
 
-                file_name = f"{combo_box_text}_table_score.json"
-                with open(file_name, "r", encoding="utf-8") as json_file:
-                    json_data = json.load(json_file)
-                    timestamp = json_data.get("timestamp", "")
-
                 file_name = f"{combo_box_text}_table_data.json"
                 with open(file_name, "r", encoding="utf-8") as json_file:
                     json_data = json.load(json_file)
                     total_score = json_data.get("total_score", 0)
                     area_scores = json_data.get("area_scores", {})
+                    num_questions = int(json_data.get("num_questions", 0))
 
                 performance_data = []
                 for col in range(7, self.table_widget.columnCount()):
@@ -221,7 +217,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                     else:
                         score = 0
                     achievement = (score / points * 100) if points else 0
-                    average = avg_score
+                    average = avg_score # 바꿔야함
 
                     performance_data.append({
                         "category": category,
@@ -252,6 +248,8 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                     score_file_name = f"{combo_box_text}_table_score.json"
                     with open(score_file_name, "r", encoding="utf-8") as score_file:
                         score_data = json.load(score_file)
+                        for student_info in score_data['score']:
+                            timestamp = student_info.get('timestamp', '')
                         for question_number, question_info in enumerate(questions, start=1):
                             question_answer = question_info.get("정답", "")
                             question_score = question_info.get("배점", "")
@@ -266,18 +264,34 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                             if student_data:
                                 student_answer = student_data.get(str(question_number), "")
 
-                            if question_number <= 20:
-                                question_rows_first_table += f"""
-                                        <tr>
-                                            <td>{question_number}</td>
-                                            <td>{question_score}</td>
-                                            <td>{question_answer}</td>
-                                            <td>{student_answer}</td>
-                                            <td>...</td>  <!-- 정답률을 계산하고 채우는 로직을 추가하세요 -->
-                                        </tr>
-                                    """
-                            else:
-                                question_rows_second_table += f"""
+                            half_questions = num_questions / 2
+                            remaining_questions = num_questions - half_questions
+
+                            if question_number <= num_questions:
+                                if remaining_questions > 0:
+                                    if question_number <= half_questions + 1:
+                                        question_rows_first_table += f"""
+                                            <tr>
+                                                <td>{question_number}</td>
+                                                <td>{question_score}</td>
+                                                <td>{question_answer}</td>
+                                                <td>{student_answer}</td>
+                                                <td>...</td>  <!-- 정답률을 계산하고 채우는 로직을 추가하세요 -->
+                                            </tr>
+                                        """
+                                    else:
+                                        question_rows_second_table += f"""
+                                            <tr>
+                                                <td>{question_number}</td>
+                                                <td>{question_score}</td>
+                                                <td>{question_answer}</td>
+                                                <td>{student_answer}</td>
+                                                <td>...</td>  <!-- 정답률을 계산하고 채우는 로직을 추가하세요 -->
+                                            </tr>
+                                        """
+                                        remaining_questions -= 1
+                                else:
+                                    question_rows_first_table += f"""
                                         <tr>
                                             <td>{question_number}</td>
                                             <td>{question_score}</td>
