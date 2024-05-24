@@ -214,15 +214,19 @@ class ExamInputWidget(QWidget):   # 시험 입력 화면
                     item.setTextAlignment(Qt.AlignCenter)
                     self.list_widget.addItem(item)
 
-    def saveTableData(self):   # 문제지 표의 내용 저장
+    def saveTableData(self):  # 문제지 표의 내용 저장
         table_data = {
             "num_questions": self.line_edit.text(),
             "total_score": 0,
             "questions": []
         }
+
+        area_scores = {}
+
         for row in range(self.table_widget.rowCount()):
             row_data = {}
             row_score = 0
+            area = None
             for column in range(self.table_widget.columnCount()):
                 item = self.table_widget.item(row, column)
                 if item is not None:
@@ -230,8 +234,16 @@ class ExamInputWidget(QWidget):   # 시험 입력 화면
                     row_data[column_name] = item.text()
                     if column_name == "배점":
                         row_score += int(item.text())
+                    elif column_name == "영역":
+                        area = item.text()
+
             table_data["questions"].append(row_data)
             table_data["total_score"] += row_score
+
+            if area:
+                area_scores[area] = area_scores.get(area, 0) + row_score
+
+        table_data["area_scores"] = area_scores
 
         selected_item = self.list_widget.currentItem()
         if selected_item:
