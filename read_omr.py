@@ -26,6 +26,7 @@ class OMRReader:
         assert os.path.exists(f_pdf), f'no such file {f_pdf}'
 
         self.pdf_filename = f_pdf
+        self.pdf_name = os.path.basename(self.pdf_filename)
 
         # if both class_name and item_name are None, it is in unittest
         self.class_name = class_name
@@ -53,6 +54,8 @@ class OMRReader:
 
         with open('korean_data.json', encoding='utf-8') as f:
             self.map_kor = json.load(f)
+        
+        self.temp_png_name = None
 
     def convert_pdf_to_png(self):
         for page_number in range(len(self.pdf_document)):
@@ -63,8 +66,7 @@ class OMRReader:
                 img_path = f"{self.item_name}_{self.class_name}_page{page_number + 1}.png"
             else:
                 dir_img = os.path.dirname(self.pdf_filename)
-                pdf_name = os.path.basename(self.pdf_filename)
-                pdf_name = os.path.splitext(pdf_name)[0]
+                pdf_name = os.path.splitext(self.pdf_name)[0]
                 img_name = f"{pdf_name}_P{page_number + 1}.png"
                 img_path = os.path.join(dir_img, img_name)
 
@@ -180,6 +182,10 @@ class OMRReader:
                 end_offset = int(w * (i + 1) / nr_iter)
                 choice_img = question_img[:, start_offset:end_offset]
 
+            if self.temp_png_name:
+                tmp_name = f'mid_{self.temp_png_name}_{i}.png'
+                cv2.imwrite(tmp_name, choice_img)
+
             avg_pixel_value = int(np.mean(choice_img))
             rawdat.append(avg_pixel_value)
 
@@ -232,10 +238,10 @@ class OMRReader:
         min2 = sorted(mm)[1]
 
         if self.log_enabled:
-            print([round(x,2) for x in mm], round(mean_mm,2), round(min2,2))
+            print([round(x,3) for x in mm], round(mean_mm,3), round(min2,3))
 
         # TODO: 0.6 and 0.3 are heuristics, need to get more cases
-        if mean_mm > 0.6 or min2 > 0.3:
+        if mean_mm > 0.55 or min2 > 0.2:
             return mm.index(0)
 
     def extract_number(self, img, gray):   # omr 학번 표에 삽입
@@ -248,8 +254,10 @@ class OMRReader:
         ]
         # threshold = 210
 
-        for coordinates in user_coordinates:
+        for index, coordinates in enumerate(user_coordinates):
+            self.temp_png_name = f'{os.path.basename(self.this_raw_answer["f_png"]).replace(".","_")}_number_{index}'
             rawdat = self.get_raw_data(coordinates, img, gray, 10)
+            self.temp_png_name = None
 
             # store all values for debugging
             self.this_raw_answer['number']['raw'].append(rawdat)
