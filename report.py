@@ -248,18 +248,33 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                 with open(file_name, "r", encoding="utf-8") as json_file:
                     json_data = json.load(json_file)
                     questions = json_data.get("questions", [])
-                    for question_number, question_info in enumerate(questions, start=1):
-                        question_answer = question_info.get("정답", "")
-                        question_score = question_info.get("배점", "")
-                        question_rows += f"""
-                            <tr>
-                                <td>{question_number}</td>
-                                <td>{question_score}</td>
-                                <td>{question_answer}</td>
-                                <td>...</td>  <!-- 학생 답안을 채우는 로직을 추가하세요 -->
-                                <td>...</td>  <!-- 정답률을 계산하고 채우는 로직을 추가하세요 -->
-                            </tr>
-                        """
+                    score_file_name = f"{combo_box_text}_table_score.json"
+                    with open(score_file_name, "r", encoding="utf-8") as score_file:
+                        score_data = json.load(score_file)
+                        for question_number, question_info in enumerate(questions, start=1):
+                            question_answer = question_info.get("정답", "")
+                            question_score = question_info.get("배점", "")
+                            student_name = table_item_text
+
+                            student_data = None
+                            for data in score_data['score']:
+                                if data['이름'] == student_name:
+                                    student_data = data
+                                    break
+
+                            if student_data:
+                                student_answer = student_data.get(str(question_number), "")
+                                print(student_answer)
+
+                            question_rows += f"""
+                                <tr>
+                                    <td>{question_number}</td>
+                                    <td>{question_score}</td>
+                                    <td>{question_answer}</td>
+                                    <td>{student_answer}</td>
+                                    <td>...</td>  <!-- 정답률을 계산하고 채우는 로직을 추가하세요 -->
+                                </tr>
+                            """
 
                 with open(file_path, "w", encoding="utf-8") as file:
                     file.write(
