@@ -243,7 +243,8 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                 </tr>
                                 """
 
-                question_rows = ""
+                question_rows_first_table = ""
+                question_rows_second_table = ""
                 file_name = f"{combo_box_text}_table_data.json"
                 with open(file_name, "r", encoding="utf-8") as json_file:
                     json_data = json.load(json_file)
@@ -264,17 +265,27 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
 
                             if student_data:
                                 student_answer = student_data.get(str(question_number), "")
-                                print(student_answer)
 
-                            question_rows += f"""
-                                <tr>
-                                    <td>{question_number}</td>
-                                    <td>{question_score}</td>
-                                    <td>{question_answer}</td>
-                                    <td>{student_answer}</td>
-                                    <td>...</td>  <!-- 정답률을 계산하고 채우는 로직을 추가하세요 -->
-                                </tr>
-                            """
+                            if question_number <= 20:
+                                question_rows_first_table += f"""
+                                        <tr>
+                                            <td>{question_number}</td>
+                                            <td>{question_score}</td>
+                                            <td>{question_answer}</td>
+                                            <td>{student_answer}</td>
+                                            <td>...</td>  <!-- 정답률을 계산하고 채우는 로직을 추가하세요 -->
+                                        </tr>
+                                    """
+                            else:
+                                question_rows_second_table += f"""
+                                        <tr>
+                                            <td>{question_number}</td>
+                                            <td>{question_score}</td>
+                                            <td>{question_answer}</td>
+                                            <td>{student_answer}</td>
+                                            <td>...</td>  <!-- 정답률을 계산하고 채우는 로직을 추가하세요 -->
+                                        </tr>
+                                    """
 
                 with open(file_path, "w", encoding="utf-8") as file:
                     file.write(
@@ -287,12 +298,12 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                             <style>
                                 @page {{
                                     size: A4;
-                                    margin: 0; /* 페이지 여백 제거 */
-                                    border: 2px solid black;
+                                    margin: 0;
                                 }}
                                 body {{ 
                                     font-family: Arial, sans-serif; 
-                                    font-size:8px;
+                                    font-size:12px;
+                                    margin: 0;
                                 }}
                                 table {{ 
                                     width: 100%; 
@@ -312,7 +323,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                     margin-left: 10px;
                                     font-weight: normal;
                                      position: relative;
-                                     font-size:10px;
+                                     font-size:14px;
                                 }}
                                 h2::before {{
                                     content: "|";
@@ -335,11 +346,20 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                 }}
                                 h1 {{
                                     margin-bottom: 3px;
-                                    font-size:14px;
+                                    font-size:18px;
                                 }}
                                 .special {{
                                     border-bottom: 4px solid red;
                                     margin-bottom: -2px;
+                                }}
+                                .container {{
+                                    display: flex;
+                                    justify-content: space-between;
+                                    margin: 20px;
+                                }}
+                                .table-wrapper {{
+                                    width: calc(50% - 10px);
+                                    margin: 0;
                                 }}
                             </style>
                             <script>
@@ -391,16 +411,32 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                             </table>
 
                             <h2>문항 채점표</h2>
-                            <table>
-                                <tr>
-                                    <th>문항</th>
-                                    <th>배점</th>
-                                    <th>정답</th>
-                                    <th>학생답안</th>
-                                    <th>정답률%</th>
-                                </tr> 
-                                {question_rows}
-                            </table>  
+                            <div class="container">
+                                <div class="table-wrapper">
+                                    <table>
+                                        <tr>
+                                            <th>문항</th>
+                                            <th>배점</th>
+                                            <th>정답</th>
+                                            <th>학생답안</th>
+                                            <th>정답률%</th>
+                                        </tr> 
+                                        {question_rows_first_table}
+                                    </table>
+                                </div>
+                                <div class="table-wrapper">
+                                    <table>
+                                        <tr>
+                                            <th>문항</th>
+                                            <th>배점</th>
+                                            <th>정답</th>
+                                            <th>학생답안</th>
+                                            <th>정답률%</th>
+                                        </tr> 
+                                        {question_rows_second_table}
+                                    </table>
+                                </div>
+                            </div> 
                         </body>
                         </html>
                     """)
