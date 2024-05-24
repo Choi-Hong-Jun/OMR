@@ -116,7 +116,8 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                     self.table_widget.setColumnCount(col_count)
 
                     headers = ["선택", "이름", "학번", "학급명", "학년", "핸드폰 번호", "점수"]
-                    for area in unique_areas:
+                    sorted_areas = sorted(unique_areas)
+                    for area in sorted_areas:
                         headers.append(area)
                     self.table_widget.setHorizontalHeaderLabels(headers)
 
@@ -208,6 +209,38 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                 with open(file_name, "r", encoding="utf-8") as json_file:
                     json_data = json.load(json_file)
                     total_score = json_data.get("total_score", 0)
+
+                performance_data = []
+                for col in range(7, self.table_widget.columnCount()):
+                    category = self.table_widget.horizontalHeaderItem(col).text()
+                    points = self.table_widget.item(index.row(), col).data(Qt.DisplayRole)
+                    if points is not None:
+                        points = int(float(points))
+                    else:
+                        points = 0  # Default value if data is missing
+                    score = points  # Assume points and score are the same for this example
+                    achievement = (score / points * 100) if points else 0
+                    average = avg_score  # Assume average score for simplicity
+
+                    performance_data.append({
+                        "category": category,
+                        "points": points,
+                        "score": score,
+                        "achievement": achievement,
+                        "average": average
+                    })
+
+                performance_rows = ""
+                for data in performance_data:
+                    performance_rows += f"""
+                                <tr>
+                                    <td>{data['category']}</td>
+                                    <td>{data['points']}</td>
+                                    <td>{data['score']}</td>
+                                    <td>{data['achievement']:.1f}%</td>
+                                    <td>{data['average']:.1f}</td>
+                                </tr>
+                                """
 
                 with open(file_path, "w", encoding="utf-8") as file:
                     file.write(
@@ -317,6 +350,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                     <th>성취도%</th>
                                     <th>평균</th>
                                 </tr>
+                                {performance_rows}  
                             </table>
 
                             <h2>문항 채점표</h2>
