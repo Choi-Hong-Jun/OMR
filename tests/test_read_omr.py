@@ -73,7 +73,7 @@ class TestOMRReader(unittest.TestCase):
                         else:
                             missed += 1
                             min_loc = c[key]["raw"][i].index(np.min(c[key]["raw"][i]))
-                            print(f'{fname}:{nr_page:<2} {a["name"]} {key:6}:{i:>2} -> {n_c} != {n_a}: {c[key]["raw"][i]} ({min_loc + fixed})', end='')
+                            print(f'{fname}:{nr_page:<2} {a["name"]} {key:6}:{i+fixed:>2} -> {n_c} != {n_a}: {c[key]["raw"][i]} ({min_loc + fixed})', end='')
 
                             matching_val = min_loc + fixed
                             if key == 'answer':
@@ -83,5 +83,9 @@ class TestOMRReader(unittest.TestCase):
                                 print(f' -> "NOT minimum rawdat"')
                             else:
                                 print('')
+
+                            o = OMRReader(each['f_pdf'], None, None, True)
+                            o.select_filled_loc_without_threshold(c[key]["raw"][i])
+                            print(f'{"+"*50}\n\n')
 
         print(f'\n# SCORE: [{round(hit/(hit+missed)*100, 2)}] {hit}/{missed}')

@@ -22,7 +22,7 @@ class OMRReader:
         },
     }
 
-    def __init__(self, f_pdf, class_name, item_name) -> None:
+    def __init__(self, f_pdf, class_name, item_name, more_log=False) -> None:
         assert os.path.exists(f_pdf), f'no such file {f_pdf}'
 
         self.pdf_filename = f_pdf
@@ -30,6 +30,8 @@ class OMRReader:
         # if both class_name and item_name are None, it is in unittest
         self.class_name = class_name
         self.item_name = item_name
+
+        self.log_enabled = more_log
 
         self.pdf_document = fitz.open(self.pdf_filename)
         self.nr_pages = len(self.pdf_document)
@@ -229,7 +231,9 @@ class OMRReader:
         mean_mm = np.mean(mm)
         min2 = sorted(mm)[1]
 
-        # print(mm, round(mean_mm,2), min2)
+        if self.log_enabled:
+            print([round(x,2) for x in mm], round(mean_mm,2), round(min2,2))
+
         # TODO: 0.6 and 0.3 are heuristics, need to get more cases
         if mean_mm > 0.6 or min2 > 0.3:
             return mm.index(0)
