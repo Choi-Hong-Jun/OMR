@@ -158,7 +158,7 @@ class OMRGradingWidget(QWidget):  # OMR 채점 화면
         self.updateRow(nr_pages)
 
         for each_file in self.omr_reader.all_img_path:
-            img, gray_img = self.omr_reader.read_img_with_cv_as_gray(each_file)
+            img, gray_img = self.omr_reader.read_img_and_scale_up(each_file)
 
             self.addPageToStackedWidget(each_file)
 
