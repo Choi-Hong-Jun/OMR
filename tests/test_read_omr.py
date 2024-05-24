@@ -1,6 +1,7 @@
 import json
 import unittest
 import os
+import numpy as np
 import sys
 TESTDIR = os.path.dirname(os.path.abspath(__file__))
 ROOTDIR = os.path.dirname(TESTDIR)
@@ -25,7 +26,7 @@ class TestOMRReader(unittest.TestCase):
                 all_pdf.append(os.path.join(dir_samples, each))
 
         all_result = list()
-        th = 5
+        th = 0
         for index, each in enumerate(all_pdf):
             if each in self.skip_sample: continue
 
@@ -37,13 +38,14 @@ class TestOMRReader(unittest.TestCase):
 
             all_result.append(o.raw_answer)
 
-            # if th < index:
-            #     break
+            if th < index:
+                break
 
         self.make_score(all_result)
 
         with open('result.json', 'w') as f:
             json.dump(all_result, f, indent=4)
+        return
 
         with open('result_orig.json') as f:
             all_result_orig = json.load(f)
@@ -51,6 +53,7 @@ class TestOMRReader(unittest.TestCase):
         self.assertEqual(all_result, all_result_orig)
 
     def make_score(self, current):
+        print(f'\n\n{"-"*50}\n\n')
         hit = 0
         missed = 0
         for each in current:
@@ -58,17 +61,27 @@ class TestOMRReader(unittest.TestCase):
             if fname not in self.answer: continue
 
             answer = self.answer[fname]
-            for c, a in zip(each['data'], answer):
-                for n_c, n_a in zip(c['number']['colored'], a['number']):
-                    if n_c == n_a:
-                        hit += 1
-                    else:
-                        missed += 1
+            for nr_page, (c, a) in enumerate(zip(each['data'], answer), start=1):
+                for key in ['number', 'answer']:
+                    fixed = 0
+                    if key == 'answer':
+                        fixed = 1
 
-                for n_c, n_a in zip(c['answer']['colored'], a['answer']):
-                    if n_c == n_a:
-                        hit += 1
-                    else:
-                        missed += 1
+                    for i, (n_c, n_a) in enumerate(zip(c[key]['colored'], a[key])):
+                        if n_c == n_a:
+                            hit += 1
+                        else:
+                            missed += 1
+                            min_loc = c[key]["raw"][i].index(np.min(c[key]["raw"][i]))
+                            print(f'# {fname}:{nr_page:<2} {a["name"]} {key:6}:{i:>2} -> {n_c} != {n_a}: {c[key]["raw"][i]} ({min_loc + fixed})', end='')
 
-        print(f'# hit: {hit}, missed: {missed} / {hit + missed}')
+                            matching_val = min_loc + fixed
+                            if key == 'answer':
+                                matching_val = [matching_val]
+
+                            if n_a != matching_val:
+                                print(f' -> "NOT minimum rawdat"')
+                            else:
+                                print('')
+
+        print(f'\n# [{round(hit/(hit+missed)*100, 2)}] {hit}/{missed}')
