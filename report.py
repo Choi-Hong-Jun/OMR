@@ -186,12 +186,12 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
         checked_indexes = self.getCheckedIndexes()
         if checked_indexes:
             for i, index in enumerate(checked_indexes):
-                file_path = f"print_page_{i}.html"
                 combo_box_text = self.cb.currentText()
                 table_item_text = self.table_widget.item(index.row(), 1).text()
                 student_code = self.table_widget.item(index.row(), 2).data(Qt.DisplayRole)
                 class_name = self.table_widget.item(index.row(), 3).data(Qt.DisplayRole)
                 score_value = self.table_widget.item(index.row(), 6).data(Qt.DisplayRole)
+                file_path = f"{class_name}_{table_item_text}.html"
 
                 score_values = []
                 for row in range(self.table_widget.rowCount()):
@@ -243,6 +243,24 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                 </tr>
                                 """
 
+                question_rows = ""
+                file_name = f"{combo_box_text}_table_data.json"
+                with open(file_name, "r", encoding="utf-8") as json_file:
+                    json_data = json.load(json_file)
+                    questions = json_data.get("questions", [])
+                    for question_number, question_info in enumerate(questions, start=1):
+                        question_answer = question_info.get("정답", "")
+                        question_score = question_info.get("배점", "")
+                        question_rows += f"""
+                            <tr>
+                                <td>{question_number}</td>
+                                <td>{question_score}</td>
+                                <td>{question_answer}</td>
+                                <td>...</td>  <!-- 학생 답안을 채우는 로직을 추가하세요 -->
+                                <td>...</td>  <!-- 정답률을 계산하고 채우는 로직을 추가하세요 -->
+                            </tr>
+                        """
+
                 with open(file_path, "w", encoding="utf-8") as file:
                     file.write(
                         f"""
@@ -259,6 +277,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                 }}
                                 body {{ 
                                     font-family: Arial, sans-serif; 
+                                    font-size:8px;
                                 }}
                                 table {{ 
                                     width: 100%; 
@@ -278,6 +297,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                     margin-left: 10px;
                                     font-weight: normal;
                                      position: relative;
+                                     font-size:10px;
                                 }}
                                 h2::before {{
                                     content: "|";
@@ -300,6 +320,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                 }}
                                 h1 {{
                                     margin-bottom: 3px;
+                                    font-size:14px;
                                 }}
                                 .special {{
                                     border-bottom: 4px solid red;
@@ -363,6 +384,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                     <th>학생답안</th>
                                     <th>정답률%</th>
                                 </tr> 
+                                {question_rows}
                             </table>  
                         </body>
                         </html>
