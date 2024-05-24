@@ -79,11 +79,16 @@ class OMRReader:
         self.this_raw_answer = copy.deepcopy(self.raw_data_base)
         self.this_raw_answer['f_png'] = img_path
 
-        img, gray = self.read_img_with_cv_as_gray(img_path)
+        img, scaled = self.read_img_and_scale_up(img_path)
 
-        self.extract_name(img, gray)
-        self.extract_number(img, gray)
-        self.extract_omr(img, gray)
+        fname = 'scaled_' + os.path.basename(img_path)
+        dirname = os.path.dirname(img_path)
+        fpath = os.path.join(dirname, fname)
+        cv2.imwrite(fpath, scaled)
+
+        self.extract_name(img, scaled)
+        self.extract_number(img, scaled)
+        self.extract_omr(img, scaled)
 
         self.raw_answer['data'].append(self.this_raw_answer)
 
@@ -329,9 +334,38 @@ class OMRReader:
         # assert img, f'fail to read img {img_path}'
         return img
 
-    def read_img_with_cv_as_gray(self, img_path):
+    def read_img_and_scale_up(self, img_path):
         img = self.read_img_with_cv(img_path)
-        return img, cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        threshold = 60
+        _, bw_img = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)
+        bw_img = cv2.cvtColor(bw_img, cv2.COLOR_BGR2GRAY)
+
+        corner_info = self.find_nearest_zero_pixel(bw_img)
+        trimmed_img = bw_img[corner_info[0][0]:corner_info[3][0],corner_info[0][1]:corner_info[3][1]]
+        scaled_img = self.scale_img(trimmed_img, 1000)
+        return img, scaled_img
+
+    def scale_img(self, img, target_w=1000):
+        (h, w) = img.shape[:2]
+        target_scale = target_w / w
+        matrix = cv2.getRotationMatrix2D((0,0), 0, target_scale)
+        target_h = int(h * target_scale)
+        return cv2.warpAffine(img, matrix, (target_w, target_h))
+
+    def find_nearest_zero_pixel(self, img):
+        (h, w) = img.shape[:2]
+        corners = [(0, 0), (0, w-1), (h-1, 0), (h-1, w-1)]
+        nearest_zero_pixels = [None, None, None, None]
+
+        for i in range(h):
+            for j in range(w):
+                if img[i, j] == 0:
+                    for k, corner in enumerate(corners):
+                        if nearest_zero_pixels[k] is None or\
+                            abs(i - corner[0]) + abs(j - corner[1]) < abs(nearest_zero_pixels[k][0] - corner[0]) + abs(nearest_zero_pixels[k][1] - corner[1]):
+                            nearest_zero_pixels[k] = (i, j)
+
+        return nearest_zero_pixels
 
 
 if __name__ == '__main__':
@@ -339,7 +373,7 @@ if __name__ == '__main__':
     o = OMRReader(f_pdf, 'no_class', 'no_item')
     o.convert_pdf_to_png()
     for f in o.all_img_path:
-        img, gray_img = o.read_img_with_cv_as_gray(f)
+        img, gray_img = o.read_img_and_scale_up(f)
 
         _name = o.extract_name(img, gray_img)
         _num = o.extract_number(img, gray_img)
