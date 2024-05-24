@@ -255,7 +255,7 @@ class OMRReader:
         # threshold = 210
 
         for index, coordinates in enumerate(user_coordinates):
-            self.temp_png_name = f'{os.path.basename(self.this_raw_answer["f_png"]).replace(".","_")}_number_{index}'
+            # self.temp_png_name = f'{os.path.basename(self.this_raw_answer["f_png"]).replace(".","_")}_number_{index}'
             rawdat = self.get_raw_data(coordinates, img, gray, 10)
             self.temp_png_name = None
 
@@ -307,8 +307,8 @@ class OMRReader:
         desired_coordinates_count = int(num_questions)
         # threshold = 225
         for question_idx, coordinates in enumerate(user_coordinates):
-            # if question_idx >= desired_coordinates_count:
-            #     break
+            if question_idx >= desired_coordinates_count:
+                break
 
             rawdat = self.get_raw_data(coordinates, img, gray, 5, 'left')
             self.this_raw_answer['answer']['raw'].append(rawdat)
