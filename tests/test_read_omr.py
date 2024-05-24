@@ -73,7 +73,7 @@ class TestOMRReader(unittest.TestCase):
                         else:
                             missed += 1
                             min_loc = c[key]["raw"][i].index(np.min(c[key]["raw"][i]))
-                            print(f'# {fname}:{nr_page:<2} {a["name"]} {key:6}:{i:>2} -> {n_c} != {n_a}: {c[key]["raw"][i]} ({min_loc + fixed})', end='')
+                            print(f'{fname}:{nr_page:<2} {a["name"]} {key:6}:{i:>2} -> {n_c} != {n_a}: {c[key]["raw"][i]} ({min_loc + fixed})', end='')
 
                             matching_val = min_loc + fixed
                             if key == 'answer':
@@ -84,4 +84,4 @@ class TestOMRReader(unittest.TestCase):
                             else:
                                 print('')
 
-        print(f'\n# [{round(hit/(hit+missed)*100, 2)}] {hit}/{missed}')
+        print(f'\n# SCORE: [{round(hit/(hit+missed)*100, 2)}] {hit}/{missed}')
