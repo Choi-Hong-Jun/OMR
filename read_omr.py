@@ -1,24 +1,29 @@
 import os
+import sys
 import json
 import fitz
 import cv2
 import numpy as np
 
+def get_data_file_path(filename):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, filename)
+    return filename
 
 class OMRReader:
     raw_data_base = {
-        'f_png' : None,
-        'name' : {
-            'raw' : list(),
-            'colored' : list(),
+        'f_png': None,
+        'name': {
+            'raw': list(),
+            'colored': list(),
         },
-        'number' : {
-            'raw' : list(),
-            'colored' : list(),
+        'number': {
+            'raw': list(),
+            'colored': list(),
         },
-        'answer' : {
-            'raw' : list(),
-            'colored' : list(),
+        'answer': {
+            'raw': list(),
+            'colored': list(),
         },
     }
 
@@ -47,14 +52,15 @@ class OMRReader:
         self.pick_colored = self.get_colored
 
         self.raw_answer = {
-            'f_pdf' : self.pdf_filename,
-            'data' : list(),
+            'f_pdf': self.pdf_filename,
+            'data': list(),
         }
         self.this_raw_answer = self.raw_data_base.copy()
 
-        with open('korean_data.json', encoding='utf-8') as f:
+        data_file_path = get_data_file_path('korean_data.json')
+        with open(data_file_path, 'r', encoding='utf-8') as f:
             self.map_kor = json.load(f)
-        
+
         self.temp_png_name = None
 
     def convert_pdf_to_png(self):
@@ -87,7 +93,7 @@ class OMRReader:
 
         self.raw_answer['data'].append(self.this_raw_answer)
 
-    def extract_name(self, img, gray):   # omr 이름 표에 삽입
+    def extract_name(self, img, gray):  # omr 이름 표에 삽입
         fullname = list()
         self.colored = list()
 
@@ -147,7 +153,7 @@ class OMRReader:
 
     def _extract_name(self, img, gray, user_coordinates, _map, threshold, _type):
         rawdat = self.get_raw_data(user_coordinates, img, gray, len(_map))
-            
+
         # store all values for debugging
         self.this_raw_answer['name']['raw'].append(rawdat)
 
@@ -156,7 +162,7 @@ class OMRReader:
         if self.colored:
             mean_colored = int(np.mean(self.colored)) + margin
 
-        chosen = self.pick_colored(rawdat, {'threshold':threshold, 'mean_colored':mean_colored, 'type':_type})
+        chosen = self.pick_colored(rawdat, {'threshold': threshold, 'mean_colored': mean_colored, 'type': _type})
         self.this_raw_answer['name']['colored'].append(chosen)
 
         if chosen != None:
@@ -198,7 +204,7 @@ class OMRReader:
 
     def get_colored(self, rawdat, extra):
         return self.select_filled_loc_without_threshold(rawdat)
-  
+
     def select_filled_loc(self, rawdat, threshold, threshold2=None):
         under_1 = list()
         under_2 = list()
@@ -209,26 +215,26 @@ class OMRReader:
                 under_2.append(i)
 
         return {
-            'index_min' : rawdat.index(np.min(rawdat)),
-            'index_under_threshold' : under_1,
-            'index_under_threshold2' : under_2,
+            'index_min': rawdat.index(np.min(rawdat)),
+            'index_under_threshold': under_1,
+            'index_under_threshold2': under_2,
         }
 
     def get_chosen_char(self, dat, _type):
         chosen = None
         if len(dat['index_under_threshold']) == 1:
             chosen = dat['index_under_threshold'][0]
-        elif dat['index_min'] in dat['index_under_threshold'] or\
-             dat['index_min'] in dat['index_under_threshold2']:
+        elif dat['index_min'] in dat['index_under_threshold'] or \
+                dat['index_min'] in dat['index_under_threshold2']:
             chosen = dat['index_min']
-        elif (not dat['index_under_threshold'] and not dat['index_under_threshold2']) and\
-             _type in ['cho', 'jung']:
+        elif (not dat['index_under_threshold'] and not dat['index_under_threshold2']) and \
+                _type in ['cho', 'jung']:
             chosen = dat['index_min']
 
         return chosen
 
     def get_minmax_scaled(self, target):
-        return [(x- np.min(target)) / (np.max(target) - np.min(target)) for x in target]
+        return [(x - np.min(target)) / (np.max(target) - np.min(target)) for x in target]
 
     def select_filled_loc_without_threshold(self, rawdat):
         assert len(rawdat) >= 5, f'rawdat has least 5 values: {rawdat}'
@@ -238,13 +244,13 @@ class OMRReader:
         min2 = sorted(mm)[1]
 
         if self.log_enabled:
-            print([round(x,3) for x in mm], round(mean_mm,3), round(min2,3))
+            print([round(x, 3) for x in mm], round(mean_mm, 3), round(min2, 3))
 
         # TODO: 0.6 and 0.3 are heuristics, need to get more cases
         if mean_mm > 0.55 or min2 > 0.2:
             return mm.index(0)
 
-    def extract_number(self, img, gray):   # omr 학번 표에 삽입
+    def extract_number(self, img, gray):  # omr 학번 표에 삽입
         omr_numbers = []
         user_coordinates = [
             (99, 270, 11, 245),
@@ -271,26 +277,38 @@ class OMRReader:
 
         return int(''.join(str(num[0]) if num else '0' for num in omr_numbers))
 
-    def extract_omr(self, img, gray):   # omr 답 표에 삽입
+    def extract_omr(self, img, gray):  # omr 답 표에 삽입
         omr_answers = []
-        user_coordinates = [(422, 75, 78, 22), (422, 100, 78, 22), (422, 125, 78, 22), (422, 149, 78, 22), (422, 172, 78, 22),
-                            (422, 197, 78, 22), (422, 220, 78, 22), (422, 245, 78, 22), (422, 270, 78, 22), (422, 293, 78, 22),
-                            (422, 318, 78, 22), (422, 341, 78, 22), (422, 365, 78, 22), (422, 390, 78, 22), (422, 413, 78, 22),
-                            (422, 438, 78, 22), (422, 461, 78, 22), (422, 486, 78, 22), (422, 510, 78, 22), (422, 535, 78, 22),
-                            (557, 75, 78, 22), (557, 100, 78, 22), (557, 125, 78, 22), (557, 150, 78, 22), (557, 172, 78, 22),
-                            (557, 197, 78, 22), (557, 220, 78, 22), (557, 245, 78, 22), (557, 270, 78, 22), (557, 293, 78, 22),
-                            (557, 318, 78, 22), (557, 340, 78, 22), (557, 365, 78, 22), (557, 390, 78, 22), (557, 413, 78, 22),
-                            (557, 438, 78, 22), (557, 461, 78, 22), (557, 485, 78, 22), (557, 510, 78, 22), (557, 535, 78, 22),
-                            (693, 75, 78, 22), (693, 100, 78, 22), (693, 125, 78, 22), (693, 150, 78, 22), (693, 172, 78, 22),
-                            (693, 197, 78, 22), (693, 221, 78, 22), (693, 246, 78, 22), (693, 270, 78, 22), (693, 293, 78, 22),
-                            (693, 318, 78, 22), (693, 342, 78, 22), (693, 365, 78, 22), (693, 390, 78, 22), (693, 413, 78, 22),
-                            (693, 438, 78, 22), (693, 461, 78, 22), (693, 486, 78, 22), (693, 510, 78, 22), (693, 535, 78, 22)]
+        user_coordinates = [(422, 75, 78, 22), (422, 100, 78, 22), (422, 125, 78, 22), (422, 149, 78, 22),
+                            (422, 172, 78, 22),
+                            (422, 197, 78, 22), (422, 220, 78, 22), (422, 245, 78, 22), (422, 270, 78, 22),
+                            (422, 293, 78, 22),
+                            (422, 318, 78, 22), (422, 341, 78, 22), (422, 365, 78, 22), (422, 390, 78, 22),
+                            (422, 413, 78, 22),
+                            (422, 438, 78, 22), (422, 461, 78, 22), (422, 486, 78, 22), (422, 510, 78, 22),
+                            (422, 535, 78, 22),
+                            (557, 75, 78, 22), (557, 100, 78, 22), (557, 125, 78, 22), (557, 150, 78, 22),
+                            (557, 172, 78, 22),
+                            (557, 197, 78, 22), (557, 220, 78, 22), (557, 245, 78, 22), (557, 270, 78, 22),
+                            (557, 293, 78, 22),
+                            (557, 318, 78, 22), (557, 340, 78, 22), (557, 365, 78, 22), (557, 390, 78, 22),
+                            (557, 413, 78, 22),
+                            (557, 438, 78, 22), (557, 461, 78, 22), (557, 485, 78, 22), (557, 510, 78, 22),
+                            (557, 535, 78, 22),
+                            (693, 75, 78, 22), (693, 100, 78, 22), (693, 125, 78, 22), (693, 150, 78, 22),
+                            (693, 172, 78, 22),
+                            (693, 197, 78, 22), (693, 221, 78, 22), (693, 246, 78, 22), (693, 270, 78, 22),
+                            (693, 293, 78, 22),
+                            (693, 318, 78, 22), (693, 342, 78, 22), (693, 365, 78, 22), (693, 390, 78, 22),
+                            (693, 413, 78, 22),
+                            (693, 438, 78, 22), (693, 461, 78, 22), (693, 486, 78, 22), (693, 510, 78, 22),
+                            (693, 535, 78, 22)]
 
         num_questions = 0
         if self.item_name:
             file_name = f"{self.item_name}_table_data.json"
             if os.path.exists(file_name):
-                print(f'read {file_name}')
+                #print(f'read {file_name}')
                 with open(file_name, "r", encoding='utf-8') as json_file:
                     data = json.load(json_file)
 
@@ -322,7 +340,7 @@ class OMRReader:
                 self.this_raw_answer['answer']['colored'].append([])
 
         return omr_answers
-    
+
     def read_img_with_cv(self, img_path):
         img_array = np.fromfile(img_path, np.uint8)
         img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
@@ -332,20 +350,3 @@ class OMRReader:
     def read_img_with_cv_as_gray(self, img_path):
         img = self.read_img_with_cv(img_path)
         return img, cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-
-if __name__ == '__main__':
-    f_pdf = 'OMR 예시.pdf'
-    o = OMRReader(f_pdf, 'no_class', 'no_item')
-    o.convert_pdf_to_png()
-    for f in o.all_img_path:
-        img, gray_img = o.read_img_with_cv_as_gray(f)
-
-        _name = o.extract_name(img, gray_img)
-        _num = o.extract_number(img, gray_img)
-        _ans = o.extract_omr(img, gray_img)
-
-        print(f'{f}: {_name} / {_num:04} / {_ans}')
-
-    with open('alldata.json', 'w') as f:
-        json.dump(o.alldat, f, indent=4)
