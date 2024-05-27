@@ -46,6 +46,9 @@ class OMRReader:
         # chosen = self.pick_colored(rawdat, None)
         self.pick_colored = self.get_colored
 
+        # self.get_raw_data = self.get_raw_data1
+        self.get_raw_data = self.get_raw_data2
+
         self.raw_answer = {
             'f_pdf' : self.pdf_filename,
             'data' : list(),
@@ -55,6 +58,9 @@ class OMRReader:
         with open('korean_data.json', encoding='utf-8') as f:
             self.map_kor = json.load(f)
         
+        with open('coordinates.json', encoding='utf-8') as f:
+            self.coordinates = json.load(f)
+
         self.temp_png_name = None
 
     def convert_pdf_to_png(self):
@@ -96,24 +102,38 @@ class OMRReader:
         fullname = list()
         self.colored = list()
 
+        user_coordinates = [
+            (183, 277, 17, 200),
+            (199, 277, 17, 266),
+            (215, 277, 17, 200),
+            (234, 277, 17, 200),
+            (250, 277, 17, 266),
+            (266, 277, 17, 200),
+            (285, 277, 17, 200),
+            (300, 277, 17, 266),
+            (314, 277, 17, 200),
+        ]
+
+        # for get_raw_data2
+        user_coordinates = self.coordinates['name']
+
         fullname.append(self.extract_each_name(img, gray, [
-            ((183, 277, 17, 200), self.map_kor['jamo1'], 210),
-            ((199, 277, 17, 266), self.map_kor['jamo2'], 200),
-            ((215, 277, 17, 200), self.map_kor['jamo1'], 210),
+            (user_coordinates[0], self.map_kor['jamo1'], 210),
+            (user_coordinates[1], self.map_kor['jamo2'], 200),
+            (user_coordinates[2], self.map_kor['jamo1'], 210),
         ]))
 
         fullname.append(self.extract_each_name(img, gray, [
-            ((234, 277, 17, 200), self.map_kor['jamo1'], 210),
-            ((250, 277, 17, 266), self.map_kor['jamo2'], 200),
-            ((266, 277, 17, 200), self.map_kor['jamo1'], 210),
+            (user_coordinates[3], self.map_kor['jamo1'], 210),
+            (user_coordinates[4], self.map_kor['jamo2'], 200),
+            (user_coordinates[5], self.map_kor['jamo1'], 210),
         ]))
 
         fullname.append(self.extract_each_name(img, gray, [
-            ((285, 277, 17, 200), self.map_kor['jamo1'], 210),
-            ((300, 277, 17, 266), self.map_kor['jamo2'], 200),
-            ((314, 277, 17, 200), self.map_kor['jamo1'], 210),
+            (user_coordinates[6], self.map_kor['jamo1'], 210),
+            (user_coordinates[7], self.map_kor['jamo2'], 200),
+            (user_coordinates[8], self.map_kor['jamo1'], 210),
         ]))
-
         fullname = ''.join(fullname)
         return fullname
 
@@ -171,7 +191,7 @@ class OMRReader:
 
         # print(f'#        / [{threshold},{mean_colored:3}] {rawdat} / {ret}')
 
-    def get_raw_data(self, coordinates, img, gray, nr_iter, move='down'):
+    def get_raw_data1(self, coordinates, img, gray, nr_iter, move='down'):
         x, y, w, h = coordinates
         question_img = gray[y:y + h, x:x + w]
         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
@@ -192,6 +212,26 @@ class OMRReader:
                 cv2.imwrite(tmp_name, choice_img)
 
             avg_pixel_value = int(np.mean(choice_img))
+            rawdat.append(avg_pixel_value)
+
+        return rawdat
+
+    def get_raw_data2(self, coordinates, img, gray, nr_iter, move='down'):
+        rawdat = list()
+        for c in coordinates:
+            x = c[0]
+            y = c[1]
+            w = c[2]
+            h = c[3]
+
+            target_img = gray[y:y + h, x:x + w]
+            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+            if self.temp_png_name:
+                tmp_name = f'mid_{self.temp_png_name}_{i}.png'
+                cv2.imwrite(tmp_name, target_img)
+
+            avg_pixel_value = int(np.mean(target_img))
             rawdat.append(avg_pixel_value)
 
         return rawdat
@@ -257,6 +297,9 @@ class OMRReader:
             (127, 270, 11, 245),
             (142, 270, 11, 245)
         ]
+
+        # for get_raw_data2
+        user_coordinates = self.coordinates['number']
         # threshold = 210
 
         for index, coordinates in enumerate(user_coordinates):
@@ -290,6 +333,9 @@ class OMRReader:
                             (693, 197, 78, 22), (693, 221, 78, 22), (693, 246, 78, 22), (693, 270, 78, 22), (693, 293, 78, 22),
                             (693, 318, 78, 22), (693, 342, 78, 22), (693, 365, 78, 22), (693, 390, 78, 22), (693, 413, 78, 22),
                             (693, 438, 78, 22), (693, 461, 78, 22), (693, 486, 78, 22), (693, 510, 78, 22), (693, 535, 78, 22)]
+
+        # for get_raw_data2
+        user_coordinates = self.coordinates['answer']
 
         num_questions = 0
         if self.item_name:
@@ -373,13 +419,7 @@ if __name__ == '__main__':
     o = OMRReader(f_pdf, 'no_class', 'no_item')
     o.convert_pdf_to_png()
     for f in o.all_img_path:
-        img, gray_img = o.read_img_and_scale_up(f)
-
-        _name = o.extract_name(img, gray_img)
-        _num = o.extract_number(img, gray_img)
-        _ans = o.extract_omr(img, gray_img)
-
-        print(f'{f}: {_name} / {_num:04} / {_ans}')
+        o.extract_data(f)
 
     with open('alldata.json', 'w') as f:
-        json.dump(o.alldat, f, indent=4)
+        json.dump(o.raw_answer, f, indent=4)
