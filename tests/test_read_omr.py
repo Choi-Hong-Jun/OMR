@@ -26,9 +26,20 @@ class TestOMRReader(unittest.TestCase):
                 all_pdf.append(os.path.join(dir_samples, each))
 
         all_result = list()
-        th = 0
+        th = 999
+        print(f'# total samples: {len(all_pdf)}, answers: {len(self.answer)}')
         for index, each in enumerate(all_pdf):
             if each in self.skip_sample: continue
+
+            found = False
+            for a in self.answer.keys():
+                if os.path.basename(each) == a:
+                    found = True
+                    break
+
+            if not found:
+                print(f'# skip: {each}')
+                continue
 
             print(f'# handle: {each}')
             o = OMRReader(each, None, None)
@@ -39,6 +50,7 @@ class TestOMRReader(unittest.TestCase):
             all_result.append(o.raw_answer)
 
             if th < index:
+                print(f'# break at {index}')
                 break
 
         self.make_score(all_result)
