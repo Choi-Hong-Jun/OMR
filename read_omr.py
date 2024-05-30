@@ -87,7 +87,7 @@ class OMRReader:
 
         img, scaled = self.read_img_and_scale_up(img_path)
 
-        fname = 'scaled_' + os.path.basename(img_path)
+        fname = os.path.splitext(os.path.basename(img_path))[0] + '_scaled.png'
         dirname = os.path.dirname(img_path)
         fpath = os.path.join(dirname, fname)
         cv2.imwrite(fpath, scaled)
@@ -218,7 +218,7 @@ class OMRReader:
 
     def get_raw_data2(self, coordinates, img, gray, nr_iter, move='down'):
         rawdat = list()
-        for c in coordinates:
+        for index, c in enumerate(coordinates):
             x = c[0]
             y = c[1]
             w = c[2]
@@ -228,7 +228,7 @@ class OMRReader:
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
             if self.temp_png_name:
-                tmp_name = f'mid_{self.temp_png_name}_{i}.png'
+                tmp_name = f'mid_{self.temp_png_name}_{index}.png'
                 cv2.imwrite(tmp_name, target_img)
 
             avg_pixel_value = int(np.mean(target_img))
@@ -361,7 +361,9 @@ class OMRReader:
             # if question_idx >= desired_coordinates_count:
             #     break
 
+            # self.temp_png_name = f'{os.path.basename(self.this_raw_answer["f_png"]).replace(".","_")}_answer_{question_idx}'
             rawdat = self.get_raw_data(coordinates, img, gray, 5, 'left')
+            # self.temp_png_name = None
             self.this_raw_answer['answer']['raw'].append(rawdat)
 
             ret = self.pick_colored(rawdat, None)
@@ -380,14 +382,29 @@ class OMRReader:
         # assert img, f'fail to read img {img_path}'
         return img
 
+    def plot_and_save_histogram(self, img, img_path):
+        import matplotlib.pyplot as plt
+        img_flattened = img.ravel()
+        img_flattened = img_flattened[img_flattened < 200]  # Exclude 255
+        plt.hist(img_flattened,256,[0,256])
+        plt.title('Histogram for gray scale picture excluding 255')
+        plt.xticks(range(0, 256, 20))
+        # plt.yscale('log')
+        plt.savefig(img_path + '_hist.png')
+        plt.clf()
+
     def read_img_and_scale_up(self, img_path):
         img = self.read_img_with_cv(img_path)
-        threshold = 60
+        # self.plot_and_save_histogram(img, os.path.splitext(img_path)[0])
+
+        # make threshold image to find the nearest zero pixel
+        threshold = 100
         _, bw_img = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)
         bw_img = cv2.cvtColor(bw_img, cv2.COLOR_BGR2GRAY)
-
         corner_info = self.find_nearest_zero_pixel(bw_img)
-        trimmed_img = bw_img[corner_info[0][0]:corner_info[3][0],corner_info[0][1]:corner_info[3][1]]
+
+        gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        trimmed_img = gray_img[corner_info[0][0]:corner_info[3][0],corner_info[0][1]:corner_info[3][1]]
         scaled_img = self.scale_img(trimmed_img, 1000)
         return img, scaled_img
 
