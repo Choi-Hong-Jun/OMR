@@ -221,7 +221,7 @@ class OMRGradingWidget(QWidget):  # OMR 채점 화면
                         self.table_widget.setItem(row_index, column_idx, item)
                         item.setTextAlignment(Qt.AlignCenter)
 
-    def load_answer(self):  # 정답과 배점 불러오기
+    def load_answer(self):  # 정답과 배점과 영역 불러오기
         selected_item = self.cb.currentText()
         if selected_item:
             file_name = f"{selected_item}_table_data.json"
@@ -234,15 +234,15 @@ class OMRGradingWidget(QWidget):  # OMR 채점 화면
                         if isinstance(question, dict):
                             real_answer_str = question.get("정답", "")
                             real_answer = real_answer_str.split(',')
-
                             score = int(question.get("배점", 0))
-                            answers_scores.append((real_answer, score))
+                            section = question.get("영역", "")
+                            answers_scores.append((real_answer, score, section))
                     return answers_scores
 
     def make_score(self, user_answers, answer_sheet):   # 점수 계산
         total_score = 0
 
-        for user_answer, (correct_answer, score) in zip(user_answers, answer_sheet):
+        for user_answer, (correct_answer, score, section) in zip(user_answers, answer_sheet):
             assert isinstance(user_answer, list), f'user_answer type is {type(user_answer)}'
             assert isinstance(correct_answer, list), f'correct_answer type is {type(correct_answer)}'
 
