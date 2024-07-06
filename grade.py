@@ -170,6 +170,7 @@ class OMRGradingWidget(QWidget):  # OMR 채점 화면
 
             _ans = self.omr_reader.extract_omr(img, gray_img)
             self.omr_grading(_ans)
+            self._ans = _ans
             self.update_answer(_ans)
 
         if nr_pages > 1:
@@ -253,6 +254,26 @@ class OMRGradingWidget(QWidget):  # OMR 채점 화면
 
         return total_score
 
+    def make_section_scores(self, user_answers, answer_sheet):
+        section_scores = {}
+
+        for user_answer, (correct_answer, score, section) in zip(user_answers, answer_sheet):
+            assert isinstance(user_answer, list), f'user_answer type is {type(user_answer)}'
+            assert isinstance(correct_answer, list), f'correct_answer type is {type(correct_answer)}'
+
+            _user_answer = ','.join(sorted(user_answer))
+            _correct_answer = ','.join(sorted(correct_answer))
+            if _user_answer == _correct_answer:
+                if section in section_scores:
+                    section_scores[section] += score
+                else:
+                    section_scores[section] = score
+            else:  # 올바른 답이 아닐 경우 해당 영역 점수는 0으로 설정
+                if section not in section_scores:
+                    section_scores[section] = 0
+
+        return section_scores
+
     def omr_grading(self, omr_answers):  # omr 총점 계산
         answers_scores = self.load_answer()
         total_score = self.make_score(omr_answers, answers_scores)
@@ -309,6 +330,14 @@ class OMRGradingWidget(QWidget):  # OMR 채점 화면
                 header = self.table_widget.horizontalHeaderItem(column).text()
                 row_data[header] = item.text() if item is not None else ""
             new_table_data["score"].append(row_data)
+
+        user_answers = self._ans
+        answer_sheet = self.load_answer()
+        section_scores = self.make_section_scores(user_answers, answer_sheet)
+
+        for row_data in new_table_data["score"]:
+            for section, score in section_scores.items():
+                row_data[section] = score
 
         selected_item = self.cb.currentText()
         file_name = f"{selected_item}_table_score.json"
