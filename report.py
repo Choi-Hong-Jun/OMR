@@ -276,7 +276,6 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                                 <td>{question_score}</td>
                                                 <td>{question_answer}</td>
                                                 <td>{student_answer}</td>
-                                                <td>...</td>  <!-- 정답률을 계산하고 채우는 로직을 추가하세요 -->
                                             </tr>
                                         """
                                     else:
@@ -286,7 +285,6 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                                 <td>{question_score}</td>
                                                 <td>{question_answer}</td>
                                                 <td>{student_answer}</td>
-                                                <td>...</td>  <!-- 정답률을 계산하고 채우는 로직을 추가하세요 -->
                                             </tr>
                                         """
                                         remaining_questions -= 1
@@ -297,7 +295,6 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                             <td>{question_score}</td>
                                             <td>{question_answer}</td>
                                             <td>{student_answer}</td>
-                                            <td>...</td>  <!-- 정답률을 계산하고 채우는 로직을 추가하세요 -->
                                         </tr>
                                     """
 
@@ -433,7 +430,6 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                             <th>배점</th>
                                             <th>정답</th>
                                             <th>학생답안</th>
-                                            <th>정답률%</th>
                                         </tr> 
                                         {question_rows_first_table}
                                     </table>
@@ -445,7 +441,6 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                                             <th>배점</th>
                                             <th>정답</th>
                                             <th>학생답안</th>
-                                            <th>정답률%</th>
                                         </tr> 
                                         {question_rows_second_table}
                                     </table>
