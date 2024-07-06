@@ -275,7 +275,7 @@ class OMRReader:
             else:
                 omr_numbers.append([])
 
-        return int(''.join(str(num[0]) if num else '0' for num in omr_numbers))
+        return ''.join(str(num[0]) if num else '0' for num in omr_numbers)
 
     def extract_omr(self, img, gray):  # omr 답 표에 삽입
         omr_answers = []
