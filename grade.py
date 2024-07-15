@@ -254,25 +254,30 @@ class OMRGradingWidget(QWidget):  # OMR 채점 화면
 
         return total_score
 
-    def make_section_scores(self, user_answers, answer_sheet):
+    def make_section_scores(self, user_answers_list, answer_sheet):
         section_scores = {}
 
-        for user_answer, (correct_answer, score, section) in zip(user_answers, answer_sheet):
-            assert isinstance(user_answer, list), f'user_answer type is {type(user_answer)}'
-            assert isinstance(correct_answer, list), f'correct_answer type is {type(correct_answer)}'
+        # Initialize section_scores based on answer_sheet sections
+        for _, (_, _, section) in enumerate(answer_sheet):
+            section_scores[section] = 0
 
-            _user_answer = ','.join(sorted(user_answer))
-            _correct_answer = ','.join(sorted(correct_answer))
-            if _user_answer == _correct_answer:
-                if section in section_scores:
-                    section_scores[section] += score
-                else:
-                    section_scores[section] = score
-            else:  # 올바른 답이 아닐 경우 해당 영역 점수는 0으로 설정
-                if section not in section_scores:
-                    section_scores[section] = 0
+        students_section_scores = []
 
-        return section_scores
+        for user_answers in user_answers_list:
+            current_student_scores = section_scores.copy()
+
+            for user_answer, (correct_answer, score, section) in zip(user_answers, answer_sheet):
+                assert isinstance(user_answer, list), f'user_answer type is {type(user_answer)}'
+                assert isinstance(correct_answer, list), f'correct_answer type is {type(correct_answer)}'
+
+                _user_answer = ','.join(sorted(user_answer))
+                _correct_answer = ','.join(sorted(correct_answer))
+                if _user_answer == _correct_answer:
+                    current_student_scores[section] += score
+
+            students_section_scores.append(current_student_scores)
+
+        return students_section_scores
 
     def omr_grading(self, omr_answers):  # omr 총점 계산
         answers_scores = self.load_answer()
@@ -319,26 +324,45 @@ class OMRGradingWidget(QWidget):  # OMR 채점 화면
 
         self.stacked_widget.addWidget(label)
 
-    def saveScore(self):  # 표의 값들 저장
+    def saveScore(self):
         new_table_data = {
             "score": [],
         }
+
+        # Collect data from table widget
         for row in range(self.table_widget.rowCount()):
             row_data = {"timestamp": datetime.now().isoformat()}
             for column in range(self.table_widget.columnCount()):
                 item = self.table_widget.item(row, column)
-                header = self.table_widget.horizontalHeaderItem(column).text()
-                row_data[header] = item.text() if item is not None else ""
+                if item is not None:
+                    header = self.table_widget.horizontalHeaderItem(column).text()
+                    row_data[header] = item.text()
             new_table_data["score"].append(row_data)
 
-        user_answers = self._ans
-        answer_sheet = self.load_answer()
-        section_scores = self.make_section_scores(user_answers, answer_sheet)
-
+        # Convert user answers to a list of lists
+        user_answers_list = []
         for row_data in new_table_data["score"]:
-            for section, score in section_scores.items():
+            answers = []
+            for i in range(4, self.table_widget.columnCount()):
+                header = self.table_widget.horizontalHeaderItem(i).text()
+                if header in row_data:
+                    answers.append(row_data[header].split(','))  # Assuming answers are comma-separated
+                else:
+                    answers.append([])  # Handle missing data as needed
+            user_answers_list.append(answers)
+
+        # Load answer sheet
+        answer_sheet = self.load_answer()
+
+        # Calculate section scores
+        section_scores = self.make_section_scores(user_answers_list, answer_sheet)
+
+        # Update section scores in new_table_data
+        for i, row_data in enumerate(new_table_data["score"]):
+            for section, score in section_scores[i].items():
                 row_data[section] = score
 
+        # Save updated table data to JSON file
         selected_item = self.cb.currentText()
         file_name = f"{selected_item}_table_score.json"
 
