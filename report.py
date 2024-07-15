@@ -115,11 +115,8 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
 
                     self.table_widget.setColumnCount(col_count)
 
-                    headers = ["선택", "이름", "학번", "학급명", "학년", "핸드폰 번호", "점수"]
                     sorted_areas = sorted(unique_areas)
-                    for area in sorted_areas:
-                        headers.append(area)
-                    self.table_widget.setHorizontalHeaderLabels(headers)
+                    self.adjustTable(questions, sorted_areas)
 
     def loadScore(self):  # 채점 결과 표의 내용 불러오기
         selected_index = self.cb.currentIndex()
@@ -131,12 +128,13 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                     data = json.load(json_file)
 
                     questions = data.get("score", [])
-                    self.adjustTable(questions)
+                    areas = ["문학", "비문학1", "비문학2", "비문학3"]
+                    self.adjustTable(questions, areas)
             else:
                 self.table_widget.setRowCount(1)
                 self.table_widget.clearContents()
 
-    def adjustTable(self, questions):   # 표의 행 조정 및 체크박스 추가
+    def adjustTable(self, questions, areas):
         row_count = len(questions)
         self.table_widget.setRowCount(row_count)
 
@@ -148,6 +146,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
             layout.setContentsMargins(0, 0, 0, 0)
             widget.setLayout(layout)
             self.table_widget.setCellWidget(row, 0, widget)
+
             for column, key in enumerate(["이름", "학번", "학급명"]):
                 value = question.get(key, "") if isinstance(question, dict) else ""
                 item = QTableWidgetItem(str(value))
@@ -161,6 +160,19 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
             score_item = QTableWidgetItem(str(score_value))
             score_item.setTextAlignment(Qt.AlignCenter)
             self.table_widget.setItem(row, 6, score_item)
+
+            # 동적으로 추출된 영역 열 추가
+            for idx, area in enumerate(areas):
+                area_value = question.get(area, "")
+                area_item = QTableWidgetItem(str(area_value))
+                area_item.setTextAlignment(Qt.AlignCenter)
+                self.table_widget.setItem(row, 7 + idx, area_item)
+
+        # 테이블의 헤더 설정
+        headers = ["선택", "이름", "학번", "학급명", "학년", "핸드폰 번호", "점수"]
+        for area in areas:
+            headers.append(area)
+        self.table_widget.setHorizontalHeaderLabels(headers)
 
     def selectCb(self):   # 모두 선택
         row_count = self.table_widget.rowCount()
@@ -217,7 +229,12 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                     else:
                         score = 0
                     achievement = (score / points * 100) if points else 0
-                    average = avg_score # 바꿔야함
+                    section_score_values = []
+                    for row in range(self.table_widget.rowCount()):
+                        value = self.table_widget.item(row, col).data(Qt.DisplayRole)
+                        if value is not None:
+                            section_score_values.append(float(value))
+                    average = sum(section_score_values) / len(section_score_values) if section_score_values else 0
 
                     performance_data.append({
                         "category": category,
