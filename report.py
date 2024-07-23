@@ -23,6 +23,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
         super().__init__()
         self.initUI()
         self.loadItems()
+        self.areas = []
 
     def initUI(self):
         self.setWindowTitle('성적표 인쇄 화면')
@@ -102,6 +103,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
 
     def updateCol(self):  # 표의 열 수 조정
         selected_item = self.cb.currentText()
+        self.areas = []
         if selected_item:
             file_name = f"{selected_item}_table_data.json"
             if os.path.exists(file_name):
@@ -109,14 +111,18 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                     data = json.load(json_file)
 
                     questions = data.get("questions", [])
-                    areas = [question.get("영역", "") for question in questions if isinstance(question, dict)]
-                    unique_areas = set(areas)
-                    col_count = len(unique_areas) + 7
+                    # 중복 없이 순서를 유지하면서 areas를 가져옴
+                    areas = []
+                    for question in questions:
+                        if isinstance(question, dict) and "영역" in question:
+                            area = question["영역"]
+                            if area not in areas:
+                                areas.append(area)
+                    self.areas = areas
+                    col_count = len(self.areas) + 7
 
                     self.table_widget.setColumnCount(col_count)
-
-                    sorted_areas = sorted(unique_areas)
-                    self.adjustTable(questions, sorted_areas)
+                    self.adjustTable(questions, self.areas)
 
     def loadScore(self):  # 채점 결과 표의 내용 불러오기
         selected_index = self.cb.currentIndex()
@@ -128,8 +134,7 @@ class SendReportWidget(QWidget):  # 성적표 인쇄 화면
                     data = json.load(json_file)
 
                     questions = data.get("score", [])
-                    areas = ["문학", "비문학1", "비문학2", "비문학3"]
-                    self.adjustTable(questions, areas)
+                    self.adjustTable(questions, self.areas)
             else:
                 self.table_widget.setRowCount(1)
                 self.table_widget.clearContents()
